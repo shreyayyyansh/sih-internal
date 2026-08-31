@@ -1,0 +1,382 @@
+[
+  {
+    "scheme_id": "gov_skill_drone_136",
+    "title": "Skill India: Drone Delivery Fleet Maintenance Tech",
+    "provider": "Logistics Sector Skill Council",
+    "category": "Delivery",
+    "eligibility": "12th Pass / ITI",
+    "location": "Noida Aero-Logistics Hub, UP",
+    "duration": "250 Hours",
+    "stipend_or_benefits": "Propeller torque wrench + Lipo safe bag.",
+    "description": "Prepares riders for the incoming wave of automated delivery. Instead of riding bikes, workers learn to manage, repair, and rapidly swap payload batteries for commercial drone delivery fleets running last-mile medical and e-commerce drops.",
+    "syllabus": [
+      "Lithium-Polymer (LiPo) High-Capacity Charging",
+      "Brushless Motor Replacement & Balancing",
+      "Calibrating Payload Drop Mechanisms",
+      "Logistics Fleet Telematics Monitoring"
+    ],
+    "url": "https://www.skillindia.gov.in/",
+    "searchable_text": "delivery, drone maintenance, uav, fleet tech, drone delivery, aero logistics, brushless motor, lipo battery."
+  },
+  {
+    "scheme_id": "gov_upsdm_hydro_137",
+    "title": "UPSDM: Sewer Robotics & Hydro-Jetting Operator",
+    "provider": "Indian Plumbing Skills Council",
+    "category": "Plumber",
+    "eligibility": "10th Pass",
+    "location": "Kanpur Sanitation Tech Board, UP",
+    "duration": "200 Hours",
+    "stipend_or_benefits": "High-pressure safety visor + Hazmat boots.",
+    "description": "Erradicates dangerous manual scavenging. Upgrades plumbers to operate 4000-PSI hydro-jetting trucks and steer remote-controlled crawler cameras to blast through massive municipal sewer blockages without entering the pipes.",
+    "syllabus": [
+      "Operating 4000-PSI Commercial Hydro-Jetters",
+      "Steering CCTV Crawler Robots in Pipes",
+      "Mapping Subterranean Blockages",
+      "Safe Disposal of Jetting Backwash"
+    ],
+    "url": "https://www.upsdm.gov.in/",
+    "searchable_text": "plumber, hydro jetting, sewer camera, robotics, pipe clearing, municipal plumbing, drain cleaning, high pressure."
+  },
+  {
+    "scheme_id": "gov_pmkvy_wind_138",
+    "title": "PMKVY: Wind Turbine Nacelle Electrical Tech",
+    "provider": "Power Sector Skill Council",
+    "category": "Electrician",
+    "eligibility": "ITI (Electrical) + Working at Heights clearance",
+    "location": "Shahjahanpur Renewable Energy Hub, UP",
+    "duration": "400 Hours",
+    "stipend_or_benefits": "GWO (Global Wind Organisation) Safety Certificate.",
+    "description": "An extreme altitude, high-paying electrical gig. Teaches workers to climb 300-foot wind turbines to service the massive generators, yaw motors, and pitch control systems housed inside the nacelle.",
+    "syllabus": [
+      "GWO High-Altitude Rescue & Rope Access",
+      "Megger Testing Mega-Watt Generators",
+      "Yaw & Pitch Motor Calibration",
+      "Splicing High-Voltage Drop Cables"
+    ],
+    "url": "https://www.pmkvyofficial.org/",
+    "searchable_text": "electrician, wind turbine, renewable energy, nacelle, high voltage, generator maintenance, wind farm, extreme altitude."
+  },
+  {
+    "scheme_id": "gov_ddugky_awning_139",
+    "title": "DDU-GKY: Heavy Canvas & Tensile Structure Tailor",
+    "provider": "Apparel Sector Skill Council",
+    "category": "Tailor",
+    "eligibility": "8th Pass",
+    "location": "Lucknow Textile Manufacturing, UP",
+    "duration": "250 Hours",
+    "stipend_or_benefits": "Heavy-duty sailmaker’s palm and awl.",
+    "description": "Moves tailors into outdoor architecture. Workers learn to cut and heat-weld heavy PVC canvas to create massive commercial awnings, wedding tents, and architectural tensile shade structures for stadiums and parks.",
+    "syllabus": [
+      "Operating High-Frequency PVC Welders",
+      "Drafting Complex Tensile Cone Patterns",
+      "Stitching UV-Resistant Outdoor Thread",
+      "Grommet & Cable Rigging Integration"
+    ],
+    "url": "http://ddugky.gov.in/",
+    "searchable_text": "tailor, tensile structure, canvas, awning, pvc welding, heavy stitching, outdoor shade, commercial tent."
+  },
+  {
+    "scheme_id": "gov_nyks_bugsweep_140",
+    "title": "NYKS: TSCM Bug Sweeping & Cyber-Physical Security",
+    "provider": "Management & Professional Skills Council",
+    "category": "Security",
+    "eligibility": "12th Pass + Clean Criminal Record",
+    "location": "Noida Cyber-Physical Security Hub, UP",
+    "duration": "300 Hours",
+    "stipend_or_benefits": "Non-Linear Junction Detector (NLJD) Training.",
+    "description": "An elite corporate security niche. Trains guards to execute Technical Surveillance Counter-Measures (TSCM). They learn to use RF scanners and thermal cameras to detect hidden microphones and spy cameras in executive boardrooms and VIP estates.",
+    "syllabus": [
+      "Radio Frequency (RF) Spectrum Analysis",
+      "Detecting Covert Lenses with Laser Scanners",
+      "Thermal Sweeping for Hidden Power Supplies",
+      "Corporate Espionage Threat Profiling"
+    ],
+    "url": "https://nyks.nic.in/",
+    "searchable_text": "security, bug sweeping, tscm, surveillance detection, corporate security, executive protection, rf scanner, hidden camera."
+  },
+  {
+    "scheme_id": "gov_skill_ice_141",
+    "title": "Skill India: Commercial Ice Machine & Blast Freezer Tech",
+    "provider": "Electronics Sector Skills Council",
+    "category": "AC Repair",
+    "eligibility": "ITI (Refrigeration)",
+    "location": "Prayagraj Hospitality Board, UP",
+    "duration": "300 Hours",
+    "stipend_or_benefits": "Food-grade refrigerant manifold.",
+    "description": "A highly specialized subset of commercial HVAC. Focuses entirely on repairing 1000lb+ flaker ice machines for fisheries and blast freezers for five-star hotel kitchens, requiring complex water-valve and refrigerant synchronization.",
+    "syllabus": [
+      "Diagnosing Harvest Cycle Defrost Boards",
+      "Cleaning Evaporator Nickel Plates",
+      "Repairing Commercial Blast Chillers",
+      "Water Inlet Valve & Scale Prevention"
+    ],
+    "url": "https://www.skillindia.gov.in/",
+    "searchable_text": "ac repair, ice machine, blast freezer, commercial refrigeration, hospitality hvac, flaker, harvest cycle, hotel kitchen."
+  },
+  {
+    "scheme_id": "gov_upsdm_seismic_142",
+    "title": "UPSDM: Seismic Retrofitting & Carbon Fiber Wrapping",
+    "provider": "Construction Skill Development Council",
+    "category": "Masonry",
+    "eligibility": "10th Pass",
+    "location": "Kanpur Structural Safety Institute, UP",
+    "duration": "250 Hours",
+    "stipend_or_benefits": "Epoxy resin spreading toolkit.",
+    "description": "Upgrades masons to structural saviors. Teaches the advanced application of Carbon Fiber Reinforced Polymer (CFRP) wraps around aging concrete pillars and beams to drastically increase earthquake resistance without rebuilding.",
+    "syllabus": [
+      "Surface Grinding & Concrete Profiling",
+      "Mixing High-Strength Structural Epoxies",
+      "Wrapping CFRP Sheets on Load-Bearing Pillars",
+      "Curing & Ultrasonic Delamination Testing"
+    ],
+    "url": "https://www.upsdm.gov.in/",
+    "searchable_text": "masonry, seismic retrofit, carbon fiber, cfrp, structural strengthening, earthquake resistance, epoxy wrap, concrete repair."
+  },
+  {
+    "scheme_id": "gov_pmkvy_marinepaint_143",
+    "title": "PMKVY: Dry-Dock Ship Hull & Anti-Fouling Painter",
+    "provider": "Paints and Coatings Skill Council",
+    "category": "Painters",
+    "eligibility": "8th Pass",
+    "location": "Prayagraj Inland Port Authority, UP",
+    "duration": "200 Hours",
+    "stipend_or_benefits": "Heavy-duty respirator & Tyvek suit.",
+    "description": "Moves painters from houses to massive inland waterway cargo barges. Teaches high-pressure sandblasting to remove rust, and the safe application of toxic, anti-fouling copper paints to prevent barnacle growth below the waterline.",
+    "syllabus": [
+      "Industrial Sandblasting & Rust Profiling",
+      "Mixing Epoxy Marine Primers",
+      "Applying Anti-Fouling Biocide Coatings",
+      "Dry-Dock Safety & Toxic Fume Ventilation"
+    ],
+    "url": "https://www.pmkvyofficial.org/",
+    "searchable_text": "painters, marine paint, anti fouling, ship hull, sandblasting, barge painting, rust removal, dry dock."
+  },
+  {
+    "scheme_id": "gov_skill_wetland_144",
+    "title": "Skill India: Ecological Restoration & Wetland Landscaper",
+    "provider": "Agriculture Skill Council of India",
+    "category": "Gardening",
+    "eligibility": "10th Pass",
+    "location": "Bareilly Eco-Conservation Board, UP",
+    "duration": "300 Hours",
+    "stipend_or_benefits": "Waders & Soil pH testing kit.",
+    "description": "Takes landscaping into large-scale environmental conservation. Teaches workers to reconstruct damaged riverbanks and urban wetlands using native aquatic plants, bio-swales, and natural erosion control netting.",
+    "syllabus": [
+      "Identifying & Planting Native Aquatic Flora",
+      "Constructing Bio-Swales for Runoff Filtration",
+      "Installing Jute Erosion Control Netting",
+      "Algae Management & Water Oxygenation"
+    ],
+    "url": "https://www.skillindia.gov.in/",
+    "searchable_text": "gardening, ecological restoration, wetland, bio swale, aquatic plants, erosion control, conservation landscaping, native plants."
+  },
+  {
+    "scheme_id": "gov_ddugky_wig_145",
+    "title": "DDU-GKY: Medical Cranial Prosthetics & Wig Maker",
+    "provider": "Beauty & Wellness Sector Skill Council",
+    "category": "Beauty & Salon",
+    "eligibility": "8th Pass",
+    "location": "Lucknow Medical Textile Hub, UP",
+    "duration": "350 Hours",
+    "stipend_or_benefits": "Ventilating needle set + Lace foundation kit.",
+    "description": "A highly empathetic, high-paying niche. Transitions beauticians into creating custom-fitted, hand-tied medical wigs for alopecia and chemotherapy patients using breathable Swiss lace and real human hair.",
+    "syllabus": [
+      "Taking Plaster Cranial Molds for Perfect Fit",
+      "Hand-Tying (Ventilating) Hair into Swiss Lace",
+      "Blending Hair Textures & Directional Growth",
+      "Attaching Medical-Grade Adhesives Safely"
+    ],
+    "url": "http://ddugky.gov.in/",
+    "searchable_text": "beauty & salon, wig making, cranial prosthetics, alopecia, chemotherapy hair, lace front, ventilating needle, medical wig."
+  },
+  {
+    "scheme_id": "gov_upsdm_hyperbaric_146",
+    "title": "UPSDM: Hyperbaric & Underwater Wet Welding",
+    "provider": "Capital Goods Skill Council",
+    "category": "Welding",
+    "eligibility": "12th Pass + Commercial Diving License",
+    "location": "Prayagraj River Infrastructure Board, UP",
+    "duration": "500 Hours",
+    "stipend_or_benefits": "Underwater stinger toolkit + Dive suit grant.",
+    "description": "The most extreme, highest-paying welding gig available. Teaches certified divers to execute Stick (SMAW) welding completely submerged in water to repair bridge pylons, dam gates, and sunken barge hulls along the Ganga.",
+    "syllabus": [
+      "Underwater Arc Physics & Gas Bubble Management",
+      "Operating Waterproof Stingers safely",
+      "Blind Welding in Zero-Visibility Silt",
+      "Hyperbaric Chamber Safety & Decompression"
+    ],
+    "url": "https://www.upsdm.gov.in/",
+    "searchable_text": "welding, underwater welding, hyperbaric, wet welding, bridge repair, commercial diving, marine welding, extreme gig."
+  },
+  {
+    "scheme_id": "gov_pmkvy_lab_147",
+    "title": "PMKVY: Medical Lab Centrifuge & Autoclave Tech",
+    "provider": "Electronics Sector Skills Council",
+    "category": "Appliance Repair",
+    "eligibility": "12th Pass (Science)",
+    "location": "Kanpur Medical Electronics Park, UP",
+    "duration": "300 Hours",
+    "stipend_or_benefits": "Precision digital tachometer.",
+    "description": "Moves appliance repairers into the lucrative biotech maintenance sector. Trains mechanics to repair high-speed blood centrifuges, sterilizing autoclaves, and medical incubators for diagnostic labs and hospitals.",
+    "syllabus": [
+      "Calibrating High-RPM Centrifuge Motors",
+      "Replacing Autoclave Pressure Seals & Valves",
+      "Incubator Thermostat & Humidity Sensor Repair",
+      "Sterile Environment Repair Protocols"
+    ],
+    "url": "https://www.pmkvyofficial.org/",
+    "searchable_text": "appliance repair, lab equipment, centrifuge, autoclave, medical repair, hospital maintenance, incubator, biotech tech."
+  },
+  {
+    "scheme_id": "gov_skill_monument_148",
+    "title": "Skill India: Heritage Stone & Monument Restoration Cleaner",
+    "provider": "Healthcare Sector Skill Council",
+    "category": "Deep Cleaning",
+    "eligibility": "10th Pass",
+    "location": "Lucknow Archaeological Survey Hub, UP",
+    "duration": "200 Hours",
+    "stipend_or_benefits": "Low-pressure micro-abrasive cleaning kit.",
+    "description": "Transforms commercial cleaners into delicate restoration artisans. Teaches the use of low-pressure steam, poultices, and micro-abrasives to safely remove centuries of pollution and biological growth from historical monuments and delicate sandstone.",
+    "syllabus": [
+      "Identifying Stone Porosity & Acid Reactions",
+      "Applying Chemical Poultices for Deep Stains",
+      "Operating Low-Pressure JOS/DOFF Steam Systems",
+      "Removing Biological Algae without Chipping"
+    ],
+    "url": "https://www.skillindia.gov.in/",
+    "searchable_text": "deep cleaning, monument restoration, heritage cleaning, stone cleaning, historical preservation, steam cleaning, poultice, sandstone."
+  },
+  {
+    "scheme_id": "gov_nyks_bird_149",
+    "title": "NYKS: Humane Avian Control & Bird Netting Tech",
+    "provider": "National Institute of Plant Health Management",
+    "category": "Pest Control",
+    "eligibility": "8th Pass",
+    "location": "Shahjahanpur Commercial Zone, UP",
+    "duration": "100 Hours",
+    "stipend_or_benefits": "High-tension wire crimping toolkit.",
+    "description": "A highly demanded, chemical-free B2B pest control gig. Trains workers in high-altitude rigging to install invisible nylon bird netting, stainless steel spikes, and ultrasonic deterrents to protect warehouses and luxury apartments from pigeon droppings.",
+    "syllabus": [
+      "Anchoring High-Tension Perimeter Wire",
+      "Splicing & Zipping Nylon Bird Nets",
+      "Installing Polycarbonate Anti-Roosting Spikes",
+      "High-Altitude Rigging & Drop-Safety"
+    ],
+    "url": "https://nyks.nic.in/",
+    "searchable_text": "pest control, bird netting, pigeon control, avian deterrent, humane pest control, high altitude netting, anti roosting."
+  },
+  {
+    "scheme_id": "gov_upsdm_track_150",
+    "title": "UPSDM: Athletic Track & Polyurethane Pouring Tech",
+    "provider": "Construction Skill Development Council",
+    "category": "Flooring",
+    "eligibility": "10th Pass",
+    "location": "Noida Sports Infrastructure Board, UP",
+    "duration": "250 Hours",
+    "stipend_or_benefits": "Resin mixing paddles & Spike shoes.",
+    "description": "Upgrades epoxy floorers to massive sports infrastructure projects. Teaches the precise chemical mixing and laser-leveled pouring of EPDM rubber granules and polyurethane binders to create Olympic-grade athletic running tracks.",
+    "syllabus": [
+      "Asphalt Base Preparation for Tracks",
+      "Mixing EPDM Rubber & Polyurethane Binders",
+      "Operating Paving Machines for Seamless Pours",
+      "Painting IAAF Standard Track Lines"
+    ],
+    "url": "https://www.upsdm.gov.in/",
+    "searchable_text": "flooring, athletic track, epdm rubber, polyurethane floor, sports infrastructure, stadium flooring, running track, rubber pouring."
+  },
+  {
+    "scheme_id": "gov_ddugky_slate_151",
+    "title": "DDU-GKY: Heritage Slate & Copper Seam Roofer",
+    "provider": "Construction Skill Development Council",
+    "category": "Roofing",
+    "eligibility": "10th Pass",
+    "location": "Lucknow Heritage Board, UP",
+    "duration": "300 Hours",
+    "stipend_or_benefits": "Slate cutter & Copper soldering iron.",
+    "description": "An incredibly niche architectural upskill. Takes roofers off tin sheets and teaches the hand-cutting of natural slate tiles and the waterproofing of historical roofs using soldered copper flashing that lasts over 100 years.",
+    "syllabus": [
+      "Hand-Cutting & Hole-Punching Natural Slate",
+      "Laying Interlocking Slate Patterns",
+      "Bending & Soldering Copper Roof Flashing",
+      "Historical Conservation Roofing Ethics"
+    ],
+    "url": "http://ddugky.gov.in/",
+    "searchable_text": "roofing, slate roof, copper flashing, heritage roofing, architectural preservation, natural slate, custom roofing, soldering."
+  },
+  {
+    "scheme_id": "gov_pmkvy_yacht_152",
+    "title": "PMKVY: Marine & Yacht Interior Joinery",
+    "provider": "Furniture & Fittings Skill Council",
+    "category": "Carpenter",
+    "eligibility": "12th Pass",
+    "location": "Prayagraj Inland Port Authority, UP",
+    "duration": "350 Hours",
+    "stipend_or_benefits": "Teak wood finishing toolkit.",
+    "description": "Transitions high-end carpenters into the luxury marine industry. Teaches the complex math of building curved, ultra-lightweight cabinetry for yachts and luxury river cruisers, using moisture-resistant teak and marine ply.",
+    "syllabus": [
+      "Template Making for Complex Hull Curves",
+      "Working with Marine Ply & Teak Veneers",
+      "Vibration-Proof Cabinet Hardware Installation",
+      "Marine-Grade Polyurethane Varnishing"
+    ],
+    "url": "https://www.pmkvyofficial.org/",
+    "searchable_text": "carpenter, marine joinery, yacht interior, custom woodwork, teak finishing, boat building, curved cabinetry, luxury marine."
+  },
+  {
+    "scheme_id": "gov_skill_server_153",
+    "title": "Skill India: Enterprise Server Rack Relocation Specialist",
+    "provider": "Logistics Sector Skill Council",
+    "category": "Movers",
+    "eligibility": "12th Pass",
+    "location": "Noida IT Logistics Hub, UP",
+    "duration": "200 Hours",
+    "stipend_or_benefits": "Anti-static (ESD) gloves + Rack jack access.",
+    "description": "The highest tier of B2B moving. Trains logistics workers to safely un-rack, shock-mount, and relocate multi-million dollar IT server racks between data centers without causing hard drive crashes or voiding manufacturer warranties.",
+    "syllabus": [
+      "Labeling & Unpatching Server Cables",
+      "Using Server Lifts & Shock-Pallets",
+      "Climate-Controlled Transit Monitoring",
+      "Re-racking & Power-On Sequencing"
+    ],
+    "url": "https://www.skillindia.gov.in/",
+    "searchable_text": "movers, server relocation, data center move, it logistics, shock pallet, tech moving, enterprise relocation, rack jack."
+  },
+  {
+    "scheme_id": "gov_upsdm_volumetech_154",
+    "title": "UPSDM: LED Volume & Virtual Production Studio Tech",
+    "provider": "Media & Entertainment Skills Council",
+    "category": "Photography",
+    "eligibility": "12th Pass",
+    "location": "Noida Film City Hub, UP",
+    "duration": "350 Hours",
+    "stipend_or_benefits": "Unreal Engine access + Pixel mapping tool.",
+    "description": "Takes photographers and videographers straight into the future of cinema. Teaches the hardware setup, pixel mapping, and real-time lighting synchronization of massive LED Volume screens used to shoot modern films (like The Mandalorian).",
+    "syllabus": [
+      "Assembling Modular LED Wall Cabinets",
+      "Pixel Mapping & Refresh Rate Syncing",
+      "Unreal Engine Real-Time Render Basics",
+      "Lighting Subjects to Match Virtual Backgrounds"
+    ],
+    "url": "https://www.upsdm.gov.in/",
+    "searchable_text": "photography, virtual production, led volume, cinematography, unreal engine, pixel mapping, studio tech, film lighting."
+  },
+  {
+    "scheme_id": "gov_nyks_prefab_155",
+    "title": "NYKS: Modular Pre-Fab Home Assembly Tech",
+    "provider": "Construction Skill Development Council",
+    "category": "Civil Work",
+    "eligibility": "10th Pass",
+    "location": "Shahjahanpur Smart City Board, UP",
+    "duration": "250 Hours",
+    "stipend_or_benefits": "Laser alignment level & Impact driver.",
+    "description": "The future of affordable housing. Transitions masons and civil workers to assembling precision-engineered, factory-built modular homes on-site in a matter of days, focusing on structural bolting and weather-sealing.",
+    "syllabus": [
+      "Reading Pre-Fab Assembly Blueprints",
+      "Craning & Aligning Modular Room Pods",
+      "High-Torque Structural Bolting",
+      "Sealing Pod Joints against Weather & Pests"
+    ],
+    "url": "https://nyks.nic.in/",
+    "searchable_text": "civil work, prefab home, modular construction, assembly tech, smart city, rapid construction, bolting, weather sealing."
+  }
+]
