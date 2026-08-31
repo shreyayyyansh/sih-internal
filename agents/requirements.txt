@@ -1,0 +1,41 @@
+# --- Core Server ---
+fastapi
+uvicorn
+python-dotenv
+requests
+pydantic
+
+# --- AI & LangGraph Framework ---
+langgraph
+langchain
+langchain-core
+langchain-community
+langchain-text-splitters
+langchain-openai
+langchain-google-genai
+google-generativeai
+google-cloud-aiplatform
+openai
+
+# --- Data & Math ---
+numpy
+pandas
+pydantic-core
+
+# --- Utilities ---
+python-dateutil
+pytz
+PyYAML
+regex
+httpx
+typing-extensions
+tiktoken
+Pillow
+
+# --- MongoDB (Graph RAG) ---
+motor
+certifi
+
+# --- Security & Auth ---
+python-jose[cryptography]
+PyJWT
