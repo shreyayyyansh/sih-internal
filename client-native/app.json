@@ -1,0 +1,104 @@
+{
+  "expo": {
+    "name": "Urban Flow",
+    "slug": "urban-flow",
+    "scheme": "urbanflow",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.urbanflow",
+      "config": {
+        "googleMapsApiKey": "AIzaSyCDSlnYmEkg5tKSjmvPUdIH2xoVHnMxZ-o"
+      }
+
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/logo.png",
+        "backgroundImage": "./assets/images/logo.png",
+        "monochromeImage": "./assets/images/logo.png"
+      },
+      "package": "com.anonymous.urbanflow",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "RECORD_AUDIO"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCDSlnYmEkg5tKSjmvPUdIH2xoVHnMxZ-o"
+        }
+      }
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/logo.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-task-manager",
+      [
+        "react-native-auth0",
+        {
+          "domain": "dev-qmdwgpootb6gpb1h.us.auth0.com",
+          "customScheme": "com.anonymous.urbanflow.auth0"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "backgroundColor": "#000000"
+          }
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Urban Flow to use your location for real-time safety routing and SOS alerts even when the app is in the background.",
+          "isAndroidForegroundServiceEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow Urban Flow to access your microphone to record emergency voice notes during an SOS."
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Urban Flow to continuously listen for the SOS 'help' trigger words.",
+          "speechRecognitionPermission": "Allow Urban Flow to transcribe background audio offline to detect the SOS 'help' trigger words."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/logo.png",
+          "color": "#dc2626"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Urban Flow to access your photos to report issues with evidence.",
+          "cameraPermission": "Allow Urban Flow to access your camera to take photos of issues."
+        }
+      ]
+    ]
+  }
+}
