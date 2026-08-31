@@ -37,3 +37,6 @@ sentinal/serviceAccountKey.json
 sentinal/__pycache__
 agents/.venv
 server/.venv
+
+#client-native
+client-native/lib/firebase.js
