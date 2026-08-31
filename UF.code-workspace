@@ -1,0 +1,26 @@
+{
+  "folders": [
+    {
+      "name": "agents",
+      "path": "agents"
+    },
+    {
+      "name": "client-native",
+      "path": "client-native"
+    },
+    {
+      "name": "client",
+      "path": "client"
+    },
+    {
+      "name": "server",
+      "path": "server"
+    },
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "python.terminal.activateEnvironment": true
+  }
+}
