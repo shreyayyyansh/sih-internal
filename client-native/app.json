@@ -11,7 +11,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.urbanflow",
       "config": {
-        "googleMapsApiKey": "AIzaSyCDSlnYmEkg5tKSjmvPUdIH2xoVHnMxZ-o"
+        "googleMapsApiKey": "AIzaSyBm5zgvvWeYGhMqO4BekPzMIPUMF8exc7w"
       }
 
     },
@@ -33,7 +33,7 @@
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyCDSlnYmEkg5tKSjmvPUdIH2xoVHnMxZ-o"
+          "apiKey": "AIzaSyBm5zgvvWeYGhMqO4BekPzMIPUMF8exc7w"
         }
       }
     },
