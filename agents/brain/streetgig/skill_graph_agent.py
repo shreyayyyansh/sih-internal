@@ -6,7 +6,7 @@
 import os
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 
@@ -26,7 +26,7 @@ class SkillExtractionResult(BaseModel):
     category_guess: str = Field(description="The StreetGig category this maps to, e.g. Plumber, Electrician")
 
 
-llm = ChatGoogleGenerativeAI(model='gemini-2.0-flash', temperature=0, max_retries=2)
+llm = get_chat_model(model='gemini-2.5-flash', temperature=0, max_retries=2)
 extractor = llm.with_structured_output(SkillExtractionResult)
 
 

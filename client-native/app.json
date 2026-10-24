@@ -9,11 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.urbanflow",
-      "config": {
-        "googleMapsApiKey": "AIzaSyBm5zgvvWeYGhMqO4BekPzMIPUMF8exc7w"
-      }
-
+      "bundleIdentifier": "com.anonymous.urbanflow"
     },
     "android": {
       "adaptiveIcon": {
@@ -30,12 +26,7 @@
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_LOCATION",
         "RECORD_AUDIO"
-      ],
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyBm5zgvvWeYGhMqO4BekPzMIPUMF8exc7w"
-        }
-      }
+      ]
     },
     "web": {
       "output": "static",

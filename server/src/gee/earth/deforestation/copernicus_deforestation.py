@@ -6,7 +6,8 @@ import datetime
 from google.oauth2 import service_account
 
 # --- CONFIGURATION ---
-GCP_PROJECT_ID = 'certain-acre-482416-b7' 
+# GEE project: env GEE_PROJECT_ID, else the project_id from the service account key file
+GCP_PROJECT_ID = os.environ.get('GEE_PROJECT_ID')
 DEFAULT_RECENT_LOOKBACK = 6      
 DEFAULT_BASELINE_WINDOW = 90   
 DEFAULT_NDVI_DROP_THRESHOLD = -0.15 
@@ -20,7 +21,7 @@ def initialize_gee(credentials_path_arg):
             return False
         credentials = service_account.Credentials.from_service_account_file(credentials_path_arg)
         scoped_credentials = credentials.with_scopes(['https://www.googleapis.com/auth/earthengine'])
-        ee.Initialize(credentials=scoped_credentials, project=GCP_PROJECT_ID, opt_url='https://earthengine-highvolume.googleapis.com')
+        ee.Initialize(credentials=scoped_credentials, project=GCP_PROJECT_ID or credentials.project_id, opt_url='https://earthengine-highvolume.googleapis.com')
         return True
     except Exception:
         return False

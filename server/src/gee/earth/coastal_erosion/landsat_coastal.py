@@ -4,7 +4,8 @@ import os
 import ee
 import traceback
 
-gcp_project_id = 'certain-acre-482416-b7'
+# GEE project: env GEE_PROJECT_ID, else the project_id from the service account key file
+gcp_project_id = os.environ.get('GEE_PROJECT_ID')
 
 def initialize_gee(credentials_path_arg):
     global gcp_project_id
@@ -14,7 +15,7 @@ def initialize_gee(credentials_path_arg):
             print(f"ERROR: Credentials file not found.", file=sys.stderr)
             return False
         credentials = ee.ServiceAccountCredentials(None, key_file=credentials_path)
-        ee.Initialize(credentials=credentials, project=gcp_project_id, opt_url='https://earthengine-highvolume.googleapis.com')
+        ee.Initialize(credentials=credentials, project=gcp_project_id or credentials.project_id, opt_url='https://earthengine-highvolume.googleapis.com')
         return True
     except Exception as e:
         print(f"ERROR: GEE Init Failed: {e}", file=sys.stderr)

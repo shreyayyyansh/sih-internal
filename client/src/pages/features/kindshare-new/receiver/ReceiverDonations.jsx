@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Gift, Inbox } from "lucide-react";
 import ReceiverRequestForm from "./ReceiverRequestForm";
+import { api } from "@/lib/api";
 
 const PAGE = { minHeight: "100vh", backgroundColor: "#050510", padding: "32px 40px" };
 const HEADER = { display: "flex", alignItems: "center", gap: "12px", marginBottom: "40px" };
@@ -18,8 +19,9 @@ export default function ReceiverDonations() {
   const [requestedItems, setRequestedItems] = useState([]);
 
   useEffect(() => {
-    fetch(`http://localhost:3000/api/kindshare/donations/available/${ngoId}?category=${category}`)
-      .then(res => res.json()).then(data => setDonations(data));
+    api.get(`/api/kindshare/donations/available/${ngoId}?category=${category}`)
+      .then(res => setDonations(Array.isArray(res.data) ? res.data : []))
+      .catch(err => console.error("Failed to load data", err));
   }, [ngoId, category]);
 
   return (

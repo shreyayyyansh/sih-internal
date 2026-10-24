@@ -4,7 +4,7 @@ os.environ["SSL_CERT_FILE"] = certifi.where()
 from typing import TypedDict, Annotated, Sequence, Any, List
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -23,10 +23,9 @@ class SafetyState(TypedDict):
     analysis_result: SafetyAnalysisResult | None
 
 def _get_llm():
-    return ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash", 
+    return get_chat_model(
+        model="gemini-2.5-flash",
         temperature=0.1,
-        google_api_key=os.getenv("GOOGLE_API_KEY")
     ).with_structured_output(SafetyAnalysisResult)
 
 prompt_template = """

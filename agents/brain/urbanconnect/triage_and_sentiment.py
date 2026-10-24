@@ -1,12 +1,12 @@
 import os
 import requests
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 from brain.urbanconnect.state_civic_analysis import TriageResult,CivicAnalysisState
 load_dotenv()
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:3000")
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0, max_retries=2)
+llm = get_chat_model(model="gemini-2.5-flash", temperature=0, max_retries=2)
 triage_engine = llm.with_structured_output(TriageResult)
 async def triage_and_sentiment(state: CivicAnalysisState):
     """Classifies sentiment, urgency, post type, and generates a multimodal embedding string."""

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { api } from "@/lib/api";
 
 const INPUT = { width: "100%", padding: "12px 14px", backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", color: "#fff", fontSize: "14px", outline: "none", boxSizing: "border-box", marginBottom: "10px" };
 
@@ -8,11 +9,10 @@ export default function FeedbackForm({ ngoId, ngoName }) {
   const [rating, setRating] = useState(0);
 
   const submitFeedback = async () => {
-    await fetch("http://localhost:3000/api/kindshare/feedback", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ngoId, ngoName, receiverName: name, issue, rating })
-    });
-    alert("Feedback submitted");
+    try {
+      await api.post("/api/kindshare/feedback", { ngoId, ngoName, receiverName: name, issue, rating });
+      alert("Feedback submitted");
+    } catch (err) { console.error("Failed to submit feedback", err); alert(err.response?.data?.error || err.response?.data?.message || "Failed to submit feedback"); }
   };
 
   return (

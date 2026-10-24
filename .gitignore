@@ -10,6 +10,8 @@ agents/brain/__init__.py
 server/config/gee-service-account.json
 server/vertexAiKey.json
 server/serviceAccountKey.json
+server/firebaseServiceAccount.json
+firebaseServiceAccount.json
 # Env
 .env
 .env.*

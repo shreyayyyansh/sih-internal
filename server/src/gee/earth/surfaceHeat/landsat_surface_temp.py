@@ -6,7 +6,8 @@ import datetime
 import traceback
 from google.oauth2 import service_account
 
-GCP_PROJECT_ID = 'certain-acre-482416-b7'
+# GEE project: env GEE_PROJECT_ID, else the project_id from the service account key file
+GCP_PROJECT_ID = os.environ.get('GEE_PROJECT_ID')
 
 # Look back 16 days (Landsat revisit cycle is 16 days)
 RECENT_PERIOD_DAYS = 16
@@ -25,7 +26,7 @@ def initialize_gee(credentials_path_arg):
         
         ee.Initialize(
             credentials=scoped_credentials, 
-            project=GCP_PROJECT_ID, 
+            project=GCP_PROJECT_ID or credentials.project_id, 
             opt_url='https://earthengine-highvolume.googleapis.com'
         )
         return True

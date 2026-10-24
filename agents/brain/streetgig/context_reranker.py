@@ -4,7 +4,7 @@
 
 from pydantic import BaseModel, Field
 from typing import List
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from langchain_core.messages import HumanMessage
 
 
@@ -17,7 +17,7 @@ class RankedCandidate(BaseModel):
 class RerankerOutput(BaseModel):
     candidates: List[RankedCandidate]
 
-llm = ChatGoogleGenerativeAI(model='gemini-2.0-flash', temperature=0.2)
+llm = get_chat_model(model='gemini-2.5-flash', temperature=0.2)
 reranker = llm.with_structured_output(RerankerOutput)
 
 

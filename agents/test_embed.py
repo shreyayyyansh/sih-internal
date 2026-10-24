@@ -1,8 +1,8 @@
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from brain.llm import get_embeddings
 import asyncio
 
 async def main():
-    e = GoogleGenerativeAIEmbeddings(model='models/embedding-001')
+    e = get_embeddings()
     vector = await e.aembed_query('test')
     print("Success! Vector size:", len(vector))
 

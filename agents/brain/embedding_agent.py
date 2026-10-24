@@ -1,17 +1,12 @@
 import os
 from pydantic import BaseModel
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from brain.llm import get_embeddings
 from dotenv import load_dotenv
 
 load_dotenv()
 
-if not os.getenv("GOOGLE_API_KEY"):
-    raise ValueError("Google API Key is not found")
-
 # Initialize the embedding model
-embeddings_model = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001",
-    output_dimensionality=768
-)
+embeddings_model = get_embeddings(model="gemini-embedding-001", output_dimensionality=768)
 
 async def generate_embedding(text: str) -> list[float]:
     """

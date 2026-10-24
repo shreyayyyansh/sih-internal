@@ -1,13 +1,11 @@
 import os
 from typing import Optional
 from pydantic import BaseModel, Field
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from dotenv import load_dotenv
 from langgraph.graph import END, START, StateGraph
 from langchain_core.messages import HumanMessage
 load_dotenv()
-if not os.getenv("GOOGLE_API_KEY"):
-    raise ValueError("Google API Key is not found")
 
 class EvaluationSchema(BaseModel):
     confidence: float = Field(
@@ -23,8 +21,8 @@ class GraphState(BaseModel):
     
     confidence_result: Optional[EvaluationSchema] = Field(default=None, description="The evaluation result")
 
-flash_model = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
+flash_model = get_chat_model(
+    model="gemini-2.5-flash",
     temperature=0, 
     max_retries=2,
 )

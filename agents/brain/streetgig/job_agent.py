@@ -1,16 +1,13 @@
 import os
 from typing import Optional, List
 from pydantic import BaseModel, Field
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from brain.llm import get_chat_model, get_embeddings
 from dotenv import load_dotenv
 from langgraph.graph import END, START, StateGraph
 from langchain_core.messages import HumanMessage
 from brain.streetgig.skill_graph_agent import extract_skills, SkillExtractionResult
 
 load_dotenv()
-
-if not os.getenv("GOOGLE_API_KEY"):
-    raise ValueError("Google API Key is not found")
 
 # --- Schemas ---
 
@@ -48,15 +45,14 @@ class JobAgentState(BaseModel):
 
 
 # --- LLM Setup ---
-flash_model = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
+flash_model = get_chat_model(
+    model="gemini-2.5-flash",
     temperature=0.2, 
     max_retries=2,
 )
 
 # New: Initialize the embedding model
-embeddings_model = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001",
-    output_dimensionality=768)
+embeddings_model = get_embeddings(model="gemini-embedding-001", output_dimensionality=768)
 
 structured_enricher = flash_model.with_structured_output(JobEnrichmentOutput)
 structured_feedback_generator = flash_model.with_structured_output(FeedbackFormOutput)

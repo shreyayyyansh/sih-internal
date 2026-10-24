@@ -3,6 +3,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, FileText, Inbox } from "lucide-react";
 import FeedbackForm from "./FeedbackForm";
+import { api } from "@/lib/api";
 
 const PAGE = { minHeight: "100vh", backgroundColor: "#050510", padding: "32px 40px" };
 const HEADER = { display: "flex", alignItems: "center", gap: "12px", marginBottom: "40px" };
@@ -16,8 +17,9 @@ export default function MyRequests() {
 
   useEffect(() => {
     if (!user) return;
-    fetch(`http://localhost:3000/api/kindshare/requests/receiver?email=${user.email}`)
-      .then(res => res.json()).then(data => setRequests(data));
+    api.get(`/api/kindshare/requests/receiver?email=${user.email}`)
+      .then(res => setRequests(Array.isArray(res.data) ? res.data : []))
+      .catch(err => console.error("Failed to load data", err));
   }, [user]);
 
   return (

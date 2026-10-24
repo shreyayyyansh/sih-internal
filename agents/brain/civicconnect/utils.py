@@ -1,21 +1,21 @@
 from typing import Optional
 from pydantic import BaseModel, Field, validator
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from langchain_core.messages import HumanMessage, SystemMessage
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from brain.civicconnect.state import AgentAnalysis, SeverityLevel
 
 # ── LLM instances ─────────────────────────────────────────────────────────────
 # Main model — used for 4-agent analysis
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
+llm = get_chat_model(
+    model="gemini-2.5-flash",
     temperature=0,
     max_retries=2,
 )
 
 # Preflight model — cheaper/faster; only used for relevance check
-preflight_llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
+preflight_llm = get_chat_model(
+    model="gemini-2.5-flash",
     temperature=0,
     max_retries=1,
 )

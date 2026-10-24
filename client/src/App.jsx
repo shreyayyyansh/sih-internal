@@ -1,4 +1,5 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { FEATURES } from "./config/features";
 import { useAuth0 } from "@auth0/auth0-react"; 
 import RoleBasedRedirect from "./auth/RoleBasedRedirect";
 import Home from "./pages/Home";
@@ -99,13 +100,13 @@ function App() {
     <>
       {showNavbar && <Navbar />} 
       <Routes>
-        <Route 
-          path="/" 
-          element={ isAuthenticated ? <RoleBasedRedirect /> : <Home /> } 
+        <Route
+          path="/"
+          element={ isAuthenticated ? <RoleBasedRedirect /> : <Home /> }
         />
         <Route path="/mission" element={<Mission />} />
         <Route path="/about" element={<AboutUs />} />
-        
+
         <Route
           path="/dashboard"
           element={
@@ -122,34 +123,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/assign/waste/:geoHash" element={<ProtectedRoute>
-          <AssignTask/>
-        </ProtectedRoute>} />
-        <Route
-          path="/complaint"
-          element={
-            <ProtectedRoute>
-              <ComplaintsPage />
-            </ProtectedRoute>
-          }
-        />        
-
-        <Route
-          path="/track/:id"
-          element={
-            <ProtectedRoute>
-              <TrackReport />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/administration/garbage"
-          element={
-            <ProtectedRoute>
-              <GarbageAdmin />
-            </ProtectedRoute>
-          }
-        />
         <Route
           path="/administration"
           element={
@@ -158,27 +131,99 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* KindShare admin (Administration hub card) */}
+        <Route path="/kindshare/admin" element={<KindShareAdmin />} />
+
+        {/* ========= KindShare citizen pages (FEATURES.kindShare) ========= */}
+        {FEATURES.kindShare && (
+          <>
+            <Route
+              path="/kindshare"
+              element={
+                <ProtectedRoute>
+                  <RegisterNGO />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/kindshare/donor"
+              element={
+                <ProtectedRoute>
+                  <DonorCategory />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/kindshare/receiver"
+              element={
+                <ProtectedRoute>
+                  <ReceiverCategory />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/kindshare/register-ngo"
+              element={
+                <ProtectedRoute>
+                  <RegisterNGO />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/kindshare/donor/ngos"
+              element={
+                <ProtectedRoute>
+                  <NGOList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/donate/:ngoId"
+              element={
+                <ProtectedRoute>
+                  <DonateItem />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/kindshare/select-ngo" element={<SelectNGO />} />
+            <Route path="/kindshare/ngo-status" element={<NGOStatus />} />
+            <Route path="/kindshare/ngo-admin" element={<NGOAdminDashboard />} />
+            <Route
+              path="/donation-status/:id"
+              element={
+                <ProtectedRoute>
+                  <DonationStatus />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/kindshare/my-donations" element={<MyDonations />} />
+            <Route path="/kindshare/complaints/:ngoId" element={<NGOComplaints />} />
+            <Route path="/kindshare/ngo-complaints" element={<NGOComplaintsAdmin />} />
+            <Route path="/kindshare/receiver/ngos" element={<ReceiverNGOList />} />
+            <Route path="/kindshare/receiver/donations/:ngoId" element={<ReceiverDonations />} />
+            <Route path="/kindshare/receiver/my-requests" element={<MyRequests />} />
+          </>
+        )}
+
+        {/* ========= SisterHood citizen page (DETACHED while FEATURES.sisterHood is false) ========= */}
+        {FEATURES.sisterHood && (
+          <Route
+            path="/sisterhood"
+            element={
+              <ProtectedRoute>
+                <WomenSafety />
+              </ProtectedRoute>
+            }
+          />
+        )}
+
+        {/* SisterHood admin */}
         <Route
-          path="/administration/safety-reports"
+          path="/administration/womenSafety"
           element={
             <ProtectedRoute>
-              <SafetyReports />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/administration/civic-analytics"
-          element={
-            <ProtectedRoute>
-              <CivicAnalytics />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/water"
-          element={
-            <ProtectedRoute>
-              <ComplaintsPage />
+              <WomenSafetyAdmin />
             </ProtectedRoute>
           }
         />
@@ -190,7 +235,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route 
+        <Route
           path="/administration/womenSafety/:geohashId/:roomId"
           element={
             <ProtectedRoute>
@@ -198,8 +243,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* --- NEW ROUTES: Client Women Admin --- */}
+        {/* Client Women Admin (Native SOS Command) */}
         <Route
           path="/administration/client-women-admin"
           element={
@@ -216,16 +260,243 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* -------------------------------------- */}
 
+        {/* ========= StreetGig (DETACHED while FEATURES.streetGig is false) ========= */}
+        {FEATURES.streetGig && (
+          <Route
+            path="/streetgigs"
+            element={
+              <ProtectedRoute>
+                <Jobs />
+              </ProtectedRoute>
+            }
+          />
+        )}
+
+        {/* AI Safety Audits (admin) */}
         <Route
-          path="/sisterhood"
+          path="/administration/safety-reports"
           element={
             <ProtectedRoute>
-              <WomenSafety />
+              <SafetyReports />
             </ProtectedRoute>
           }
         />
+
+        {/* Civic Analytics (admin) */}
+        <Route
+          path="/administration/civic-analytics"
+          element={
+            <ProtectedRoute>
+              <CivicAnalytics />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ========= CivicConnect citizen pages (DETACHED while FEATURES.civicConnect is false) ========= */}
+        {FEATURES.civicConnect && (
+          <>
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <ComplaintsPage/>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/complaint"
+              element={
+                <ProtectedRoute>
+                  <ComplaintsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/water"
+              element={
+                <ProtectedRoute>
+                  <ComplaintsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports/me"
+              element={
+                <ProtectedRoute >
+                  <UserReportsDashboard />
+                </ProtectedRoute>
+              }
+            />
+            {/* old garbage page */}
+            {/*<Route
+              path="/garbage"
+              element={
+                <ProtectedRoute>
+                  <Garbage />
+                </ProtectedRoute>
+              }
+            />*/}
+            <Route
+              path="/ecosnap/reports"
+              element={
+                <ProtectedRoute>
+                  <GarbageReports />
+                </ProtectedRoute>
+              }
+            />
+          </>
+        )}
+
+        {/* Report tracking - shared: admin department pages link to /track/:id */}
+        <Route
+          path="/track/:id"
+          element={
+            <ProtectedRoute>
+              <TrackReport />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* CivicConnect admin */}
+        <Route
+          path="/administration/garbage"
+          element={
+            <ProtectedRoute>
+              <GarbageAdmin />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* municipal department admin */}
+        <Route
+          path="/administration/municipal/infrastructure"
+          element={
+            <ProtectedRoute >
+              <InfraAdmin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/administration/municipal/waste"
+          element={
+            <ProtectedRoute >
+              <WasteAdmin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/administration/municipal/infra"
+          element={
+            <ProtectedRoute >
+              <InfraAdmin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/administration/municipal/water"
+          element={
+            <ProtectedRoute >
+              <WaterAdmin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/administration/municipal/electricity"
+          element={
+            <ProtectedRoute>
+              <ElectricityAdmin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/administration/municipal/fire"
+          element={
+            <ProtectedRoute>
+              <FireAdmin />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/administration/complaints-map" element={<AdminComplaintsMap />} />
+        <Route path="/admin-map/:department" element={<DepartmentComplaintMap />} />
+
+        {/* staff */}
+        <Route
+          path="/staff/waste"
+          element={
+            <ProtectedRoute >
+              <WasteStaffDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/staff/infra"
+          element={
+            <ProtectedRoute >
+              < InfraStaffDashboard/>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/staff/water"
+          element={
+            <ProtectedRoute >
+              < WaterStaffDashboard/>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/staff/electricity"
+          element={
+            <ProtectedRoute>
+              <ElectricityStaffDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/staff/fire"
+          element={
+            <ProtectedRoute>
+              <FireStaffDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* task assignment */}
+        <Route
+          path="/assign/waste/:geoHash"
+          element={
+            <ProtectedRoute >
+              <AssignTask />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assign/infra/:geoHash"
+          element={
+            <ProtectedRoute >
+              <AssignInfraTask />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assign/water/:geoHash"
+          element={
+            <ProtectedRoute >
+              <AssignWaterTask />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assign/electricity/:geoHash"
+          element={
+            <ProtectedRoute>
+              <AssignElectricityTask />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* GeoScope (admin) */}
         <Route
           path="/administration/geoscope"
           element={
@@ -242,149 +513,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/administration/womenSafety"
-          element={
-            <ProtectedRoute>
-              <WomenSafetyAdmin />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-        path="/reports"
-        element={
-          <ProtectedRoute>
-            <ComplaintsPage/>
-          </ProtectedRoute>
-        }
-      />
-        
-        //purana garbage wala //
-        {/*<Route
-          path="/garbage"
-          element={
-            <ProtectedRoute>
-              <Garbage />
-            </ProtectedRoute>
-          }
-        />*/}
-        {/* KindShare New Module */}
-          <Route
-            path="/kindshare"
-            element={
-              <ProtectedRoute>
-                <RegisterNGO />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-              path="/kindshare/donor"
-              element={
-                <ProtectedRoute>
-                  <DonorCategory />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/kindshare/receiver"
-              element={
-                <ProtectedRoute>
-                  <ReceiverCategory />
-                </ProtectedRoute>
-              }
-            />
-
-          <Route
-            path="/kindshare/register-ngo"
-            element={
-              <ProtectedRoute>
-                <RegisterNGO />
-              </ProtectedRoute>
-            }
-
-          />
-          <Route
-            path="/kindshare/donor/ngos"
-            element={
-              <ProtectedRoute>
-                <NGOList />
-              </ProtectedRoute>
-            }
-          />
-         <Route
-            path="/donate/:ngoId"
-            element={
-              <ProtectedRoute>
-                <DonateItem />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-              path="/kindshare/select-ngo"
-              element={<SelectNGO/>}
-              />
-        <Route
-          path="/kindshare/admin"
-          element={<KindShareAdmin />}
-        />
-        <Route
-          path="/kindshare/ngo-status"
-          element={<NGOStatus />}
-        />
-      <Route
-          path="/kindshare/ngo-admin"
-          element={<NGOAdminDashboard />}
-          />
-      <Route
-          path="/donation-status/:id"
-          element={
-            <ProtectedRoute>
-              <DonationStatus />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-            path="/kindshare/my-donations"
-            element={<MyDonations/>}
-            />
-        <Route
-            path="/kindshare/complaints/:ngoId"
-            element={<NGOComplaints/>}
-            />
-        <Route
-          path="/kindshare/ngo-complaints"
-          element={<NGOComplaintsAdmin />}
-        />
-        <Route
-          path="/kindshare/receiver"
-          element={<ReceiverCategory />}
-        />
-
-        <Route
-          path="/kindshare/receiver/ngos"
-          element={<ReceiverNGOList />}
-        />
-        <Route
-            path="/kindshare/receiver/donations/:ngoId"
-            element={<ReceiverDonations/>}
-            />
-        <Route
-            path="/kindshare/receiver/my-requests"
-            element={<MyRequests/>}
-            />
-        <Route
-          path="/streetgigs"
-          element={
-            <ProtectedRoute>
-              <Jobs />
-            </ProtectedRoute>
-          }
-        />
-        //we will add route here //
-
         <Route
           path="/deforestation"
           element={
@@ -432,7 +560,7 @@ function App() {
               <CoastalResult />
             </ProtectedRoute>
           }
-        ></Route>
+        />
         <Route
           path="/flood"
           element={
@@ -448,7 +576,7 @@ function App() {
               <FloodResult />
             </ProtectedRoute>
           }
-        ></Route>
+        />
         <Route
           path="/pollutants"
           element={
@@ -457,7 +585,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route 
+        <Route
           path="/pollutants/result"
           element={
             <ProtectedRoute>
@@ -481,159 +609,9 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/ecosnap/reports"
-          element={
-            <ProtectedRoute>
-              <GarbageReports />
-            </ProtectedRoute>
-          }
-        />
 
-        <Route
-          path="/reports/me"
-          element={
-            <ProtectedRoute >
-              <UserReportsDashboard />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/administration/municipal/infrastructure"
-          element={
-            <ProtectedRoute >
-              <InfraAdmin />
-            </ProtectedRoute>
-          }
-
-        />
-        <Route
-          path="/administration/municipal/waste"
-          element={
-            <ProtectedRoute >
-              <WasteAdmin />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/administration/municipal/infra"
-          element={
-            <ProtectedRoute >
-              <InfraAdmin />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/administration/municipal/water"
-          element={
-            <ProtectedRoute >
-              <WaterAdmin />
-            </ProtectedRoute>
-          }
-        />
-           <Route
-              path="/administration/municipal/electricity"
-              element={
-                <ProtectedRoute>
-                  <ElectricityAdmin />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/administration/municipal/fire"
-              element={
-                <ProtectedRoute>
-                  <FireAdmin />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/administration/complaints-map" element={<AdminComplaintsMap />} />
-           <Route
-  path="/admin-map/:department"
-  element={<DepartmentComplaintMap />}
-/>
-
-
-
-
-
-          {/* staff  */}
-          <Route
-          path="/staff/waste"
-          element={
-            <ProtectedRoute >
-              <WasteStaffDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/staff/infra"
-          element={
-            <ProtectedRoute >
-              < InfraStaffDashboard/>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/staff/water"
-          element={
-            <ProtectedRoute >
-              < WaterStaffDashboard/>
-            </ProtectedRoute>
-          }
-        />
-       <Route
-          path="/staff/electricity"
-          element={
-            <ProtectedRoute>
-              <ElectricityStaffDashboard />
-            </ProtectedRoute>
-          }
-        />
-          <Route
-          path="/staff/fire"
-          element={
-            <ProtectedRoute>
-              <FireStaffDashboard />
-            </ProtectedRoute>
-          }
-        />
-
-
-
-        <Route
-          path="/assign/waste/:geoHash"
-          element={
-            <ProtectedRoute >
-              <AssignTask />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/assign/infra/:geoHash"
-          element={
-            <ProtectedRoute >
-              <AssignInfraTask />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/assign/water/:geoHash"
-          element={
-            <ProtectedRoute >
-              <AssignWaterTask />
-            </ProtectedRoute>
-          }
-        />
-       <Route
-            path="/assign/electricity/:geoHash"
-            element={
-              <ProtectedRoute>
-                <AssignElectricityTask />
-              </ProtectedRoute>
-            }
-          />
+        {/* Detached citizen pages and unknown URLs go back through the role redirect */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       
       

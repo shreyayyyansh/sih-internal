@@ -12,9 +12,10 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
   }
 } else {
   try {
-    serviceAccount = req("../../serviceAccountKey.json");
+    // Firebase (quantacon-3e441) has its own key; serviceAccountKey.json is the GCP key for Vertex AI / Earth Engine.
+    serviceAccount = req("../../firebaseServiceAccount.json");
   } catch (error) {
-    console.error("No serviceAccountKey.json found and FIREBASE_SERVICE_ACCOUNT not set.");
+    console.error("No firebaseServiceAccount.json found and FIREBASE_SERVICE_ACCOUNT not set.");
   }
 }
 

@@ -1,3 +1,6 @@
+// DETACHED (web, citizen side): this page is not routed while FEATURES.civicConnect is
+// false in src/config/features.js, so it never mounts and none of its API calls run.
+// The code is intact - set FEATURES.civicConnect = true to re-attach it.
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Map as MapIcon, List, ArrowRight } from "lucide-react"; 

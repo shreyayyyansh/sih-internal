@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// DETACHED (web, citizen side): FireSOSButton is only rendered on /dashboard while
+// FEATURES.civicConnect is true in src/config/features.js. The code is intact.
 import { Flame, X, CheckCircle, Loader, Search } from 'lucide-react'; 
 import { ref, push, update, onValue } from "firebase/database"; 
 import { db } from "./../firebase/firebase"; 

@@ -10,19 +10,20 @@ export default function ReceiverRequests() {
   const ngoId = localStorage.getItem("ngoId");
 
   const updateStatus = async (id, status) => {
-    console.log("the currrent status", status);
-
-    const res = await api.put(`/api/kindshare/requests/${id}/status`, { "status": status });
-    console.log("Hitting backend");
-    // await fetch(`http://localhost:3000/api/kindshare/requests/${id}/status`, {
-    //   method: "PUT", headers: { "Content-Type": "a pplication/json" }, body: JSON.stringify({ "status":status })
-    // });
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    try {
+      await api.put(`/api/kindshare/requests/${id}/status`, { status });
+      setRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    } catch (err) {
+      console.error("Failed to update request status", err);
+      alert(err.response?.data?.error || err.response?.data?.message || "Failed to update request status");
+    }
   };
 
   useEffect(() => {
+    if (!ngoId) return;
     api.get(`/api/kindshare/requests/ngo/${ngoId}`)
-      .then(res => res.json()).then(data => setRequests(data)); //changed 
+      .then(res => setRequests(Array.isArray(res.data) ? res.data : []))
+      .catch(err => console.error("Failed to load receiver requests", err));
   }, [ngoId]);
 
   return (

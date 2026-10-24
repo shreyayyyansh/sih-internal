@@ -2,7 +2,7 @@ import os
 import requests
 from typing import List, Optional, TypedDict
 from pydantic import BaseModel, Field
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from langchain_core.tools import tool
 from dotenv import load_dotenv
 from langgraph.graph import END, START, StateGraph
@@ -10,11 +10,8 @@ from langgraph.checkpoint.memory import MemorySaver
 
 load_dotenv()
 
-if not os.getenv("GOOGLE_API_KEY"):
-    raise ValueError("GOOGLE_API_KEY not found!")
-
-flash_model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0, max_retries=2)
-pro_model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
+flash_model = get_chat_model(model="gemini-2.5-flash", temperature=0, max_retries=2)
+pro_model = get_chat_model(model="gemini-2.5-flash", temperature=0)
 class SentimentScore(BaseModel):
     sentiment_score: float = Field(description="Float 0.0 to 1.0. 0=Hostile/Dangerous, 1=Safe/Supportive")
     reason: str = Field(description="Concise evidence citing specific words")

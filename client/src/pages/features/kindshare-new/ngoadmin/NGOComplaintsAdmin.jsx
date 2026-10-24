@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 
 export default function NGOComplaintsAdmin() {
   const [complaints, setComplaints] = useState([]);
@@ -6,8 +7,9 @@ export default function NGOComplaintsAdmin() {
 
   useEffect(() => {
     if (!ngoId) return;
-    fetch(`http://localhost:3000/api/kindshare/complaints/ngo/${ngoId}`)
-      .then(res => res.json()).then(data => { console.log("Admin complaints:", data); setComplaints(data); });
+    api.get(`/api/kindshare/complaints/ngo/${ngoId}`)
+      .then(res => setComplaints(Array.isArray(res.data) ? res.data : []))
+      .catch(err => console.error("Failed to load complaints", err));
   }, [ngoId]);
 
   return (

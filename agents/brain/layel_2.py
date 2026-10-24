@@ -2,7 +2,7 @@ import os
 import requests
 import json
 from typing import List, Dict, TypedDict, Annotated
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.graph import END, START, StateGraph
@@ -39,7 +39,7 @@ class SurveillanceState(TypedDict):
     messages: Annotated[List[BaseMessage], add_messages]
 
 # --- 3. MODEL SETUP ---
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
+llm = get_chat_model(model="gemini-2.5-flash", temperature=0)
 llm_with_tools = llm.bind_tools([flag_suspicious_route])
 
 # --- 4. NODES ---

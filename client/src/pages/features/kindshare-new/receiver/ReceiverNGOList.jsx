@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Gift, MapPin, Star, Search } from "lucide-react";
 import ReceiverComplaintForm from "./ReceiverComplaintForm";
 import ReceiverComplaintHistory from "./ReceiverComplaintHistory";
+import { api } from "@/lib/api";
 
 const PAGE = { minHeight: "100vh", backgroundColor: "#050510", padding: "32px 40px" };
 const HEADER = { display: "flex", alignItems: "center", gap: "12px", marginBottom: "40px" };
@@ -19,8 +20,9 @@ export default function ReceiverNGOList() {
   const lon = params.get("lon");
 
   useEffect(() => {
-    fetch(`http://localhost:3000/api/kindshare/ngos?category=${category}&lat=${lat}&lon=${lon}`)
-      .then(res => res.json()).then(data => setNgos(data));
+    api.get(`/api/kindshare/ngos?category=${category}&lat=${lat}&lon=${lon}`)
+      .then(res => setNgos(Array.isArray(res.data) ? res.data : []))
+      .catch(err => console.error("Failed to load data", err));
   }, [category, lat, lon]);
 
   return (

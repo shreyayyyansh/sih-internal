@@ -15,7 +15,9 @@ import {
   Zap,
   Flame,
   Activity,
-  ArrowRight
+  ArrowRight,
+  Heart,
+  LayoutDashboard
 } from "lucide-react"
 import { useAuthStore } from "../../store/useAuthStore.js"
 import { api } from "../../lib/api.js" // Imported your API helper
@@ -124,6 +126,15 @@ export default function CityAdminHub() {
       theme: "emerald",
       specialAction: false
     },
+    {
+      id: "kindshare",
+      title: "KindShare",
+      description: "Approve NGO registrations and monitor donation and request activity.",
+      icon: Heart,
+      route: "/kindshare/admin",
+      theme: "amber",
+      specialAction: false
+    },
   ]
 
   // --- SECTION 2: DEPARTMENTAL OPERATIONS ---
@@ -178,6 +189,7 @@ export default function CityAdminHub() {
       blue:   "text-blue-600 bg-blue-50 border-blue-100 hover:border-blue-300 hover:shadow-blue-100/50",
       emerald:"text-emerald-600 bg-emerald-50 border-emerald-100 hover:border-emerald-300 hover:shadow-emerald-100/50",
       violet: "text-violet-600 bg-violet-50 border-violet-100 hover:border-violet-300 hover:shadow-violet-100/50",
+      amber:  "text-amber-600 bg-amber-50 border-amber-100 hover:border-amber-300 hover:shadow-amber-100/50",
       red:    "text-red-600 bg-red-50 border-red-100 hover:border-red-300 hover:shadow-red-100/50",
     }
     return styles[theme] || styles.indigo
@@ -247,6 +259,15 @@ export default function CityAdminHub() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Switch back to the citizen side */}
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="h-11 flex items-center gap-2 px-4 rounded-full bg-white border border-slate-200 shadow-sm text-slate-600 hover:text-slate-900 hover:border-slate-300 transition-all"
+            title="Switch to Citizen Dashboard"
+          >
+            <LayoutDashboard className="w-5 h-5" />
+            <span className="hidden sm:inline text-sm font-bold">Citizen Dashboard</span>
+          </button>
           <div className="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-slate-200 shadow-sm">
             <img src={storedUser?.picture || "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"} alt="Profile" className="w-8 h-8 rounded-full border border-slate-200" />
             <span className="text-sm font-bold text-slate-700">{storedUser?.name || "Administrator"}</span>
@@ -307,7 +328,7 @@ export default function CityAdminHub() {
                     <div className="flex justify-between items-start z-10 relative">
                        <div className="space-y-4 max-w-[70%]">
                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-md transition-transform duration-500 group-hover:rotate-6
-                            ${system.theme === 'indigo' ? 'bg-indigo-600' : system.theme === 'violet' ? 'bg-violet-600' : 'bg-rose-600'}`}>
+                            ${system.theme === 'indigo' ? 'bg-indigo-600' : system.theme === 'violet' ? 'bg-violet-600' : system.theme === 'amber' ? 'bg-amber-500' : 'bg-rose-600'}`}>
                              <Icon className="w-7 h-7" />
                           </div>
                           <div>

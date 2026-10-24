@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Package, User, Mail, Phone, MapPin, ClipboardList, Camera, Image } from "lucide-react";
+import { api } from "@/lib/api";
 
 const PAGE = { minHeight: "100vh", backgroundColor: "#050510", padding: "32px 40px", display: "flex", justifyContent: "center" };
 const HEADER = { display: "flex", alignItems: "center", gap: "12px", marginBottom: "40px" };
@@ -30,17 +31,12 @@ export default function DonateItem() {
       if (image) {
         const formData = new FormData();
         formData.append("image", image);
-        const uploadRes = await fetch("http://localhost:3000/api/kindshare/donations/upload-image", { method: "POST", body: formData });
-        const uploadData = await uploadRes.json();
-        imageUrl = uploadData.imageUrl;
+        const uploadRes = await api.post("/api/kindshare/donations/upload-image", formData);
+        imageUrl = uploadRes.data.imageUrl;
       }
-      const res = await fetch("http://localhost:3000/api/kindshare/donations", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ngoId, donorName, donorEmail, donorPhone, donorAddress: address, itemName, category, quantity, description, imageUrl, status: "pending" })
-      });
-      const data = await res.json();
-      navigate(`/donation-status/${data.id}`);
-    } catch (error) { console.error("Donation submission failed", error); }
+      const res = await api.post("/api/kindshare/donations", { ngoId, donorName, donorEmail, donorPhone, donorAddress: address, itemName, category, quantity, description, imageUrl, status: "pending" });
+      navigate(`/donation-status/${res.data.id}`);
+    } catch (error) { console.error("Donation submission failed", error); alert(error.response?.data?.error || error.response?.data?.message || "Donation submission failed"); }
   };
 
   return (

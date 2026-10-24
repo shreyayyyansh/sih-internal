@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Building2, User, Mail, Phone, MapPin, MapPinned, FileText, Shirt, BookOpen, Pill, Laptop, Package } from "lucide-react";
+import { api } from "@/lib/api";
 
 const PAGE = { minHeight: "100vh", backgroundColor: "#050510", padding: "32px 40px", display: "flex", justifyContent: "center" };
 const HEADER = { display: "flex", alignItems: "center", gap: "12px", marginBottom: "40px" };
@@ -48,13 +49,11 @@ export default function RegisterNGO() {
     e.preventDefault();
     if (!lat || !lon) { alert("Please detect location first"); return; }
     if (!ngoName || !adminName || !email) { alert("Please fill all required fields"); return; }
-    const res = await fetch("http://localhost:3000/api/kindshare/ngos/register", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: ngoName, adminName, email, phone, address: ngoAddress, description, categories, lat, lon })
-    });
-    const data = await res.json();
-    alert("NGO registered successfully");
-    navigate(`/kindshare/ngo-status?id=${data.id}`);
+    try {
+      const res = await api.post("/api/kindshare/ngos/register", { name: ngoName, adminName, email, phone, address: ngoAddress, description, categories, lat, lon });
+      alert("NGO registered successfully");
+      navigate(`/kindshare/ngo-status?id=${res.data.id}`);
+    } catch (err) { console.error("Failed to register NGO", err); alert(err.response?.data?.error || err.response?.data?.message || "Failed to register NGO"); }
   };
 
   return (

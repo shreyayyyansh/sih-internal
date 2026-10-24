@@ -1,4 +1,4 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 from brain.gee.state import GeoIntelligenceState
@@ -26,7 +26,7 @@ def synthesize_report(state: GeoIntelligenceState) -> GeoIntelligenceState:
     Produce a structured intelligence report diagnosing the severity, pattern, cause, and recommended action. Ensure the severity matches the tone of the raw analysis."""
 
     try:
-        model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.1)
+        model = get_chat_model(model="gemini-2.5-flash", temperature=0.1)
         structured_model = model.with_structured_output(IntelligenceReportModel)
         # Invoke Gemini for structured synthesis
         print(f"✍️  [Synthesis] Formatting final report for {state['region_id']}...", flush=True)

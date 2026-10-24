@@ -558,9 +558,9 @@ class ClusterSummaryResult(BaseModel):
     headline: str = Field(description="A concise 5-word headline summarizing the issue")
     summary: str = Field(description="A clear 2-sentence summary of the emerging crisis or issue")
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from langchain_core.messages import HumanMessage
-summarizer_llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
+summarizer_llm = get_chat_model(model="gemini-2.5-flash", temperature=0)
 cluster_summary_engine = summarizer_llm.with_structured_output(ClusterSummaryResult)
 
 @app.post("/summarize-cluster")

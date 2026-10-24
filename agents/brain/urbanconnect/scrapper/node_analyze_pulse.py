@@ -1,10 +1,10 @@
 import json
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from brain.urbanconnect.scrapper.state_city_pulse import CityPulseState, CityPulseAnalysis
 
 # Initialize the LLM with the strict output schema
-pulse_llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash", 
+pulse_llm = get_chat_model(
+    model="gemini-2.5-flash",
     temperature=0.1
 ).with_structured_output(CityPulseAnalysis)
 

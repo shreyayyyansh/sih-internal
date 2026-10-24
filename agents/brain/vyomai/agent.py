@@ -11,20 +11,17 @@ import json
 from dotenv import load_dotenv
 
 from langgraph.graph import StateGraph, END, START
-from google import genai
 
 from brain.vyomai.state import VyomState
 from brain.vyomai.tools import TOOL_SCHEMAS, execute_tool
+from brain.llm import get_genai_client
 
 load_dotenv()
 
-# ─── LLM Setup (google-genai SDK — uses Google Cloud billing) ────────
+# ─── LLM Setup (google-genai SDK on Vertex AI) ───────────────────────
 
-if not os.getenv("GOOGLE_API_KEY"):
-    raise ValueError("GOOGLE_API_KEY not found!")
-
-gemini_client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
-MODEL_NAME = "gemini-2.0-flash"
+gemini_client = get_genai_client()
+MODEL_NAME = "gemini-2.5-flash"
 
 
 # ─── System Prompts ─────────────────────────────────────────────────

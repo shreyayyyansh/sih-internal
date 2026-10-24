@@ -1,3 +1,6 @@
+// DETACHED (web, citizen side): this page is not routed while FEATURES.civicConnect is
+// false in src/config/features.js, so it never mounts and none of its API calls run.
+// The code is intact - set FEATURES.civicConnect = true to re-attach it.
 import { useEffect, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom"; // 👈 Import for navigation

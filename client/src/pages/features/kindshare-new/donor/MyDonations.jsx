@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ClipboardList, Inbox } from "lucide-react";
+import { api } from "@/lib/api";
 
 const PAGE = { minHeight: "100vh", backgroundColor: "#050510", padding: "32px 40px" };
 const HEADER = { display: "flex", alignItems: "center", gap: "12px", marginBottom: "40px" };
@@ -16,8 +17,8 @@ export default function MyDonations() {
 
   useEffect(() => {
     if (!user) return;
-    fetch(`http://localhost:3000/api/kindshare/donations/donor?email=${user.email}`)
-      .then(res => res.json()).then(data => { setDonations(data); setLoading(false); })
+    api.get(`/api/kindshare/donations/donor?email=${user.email}`)
+      .then(res => { setDonations(Array.isArray(res.data) ? res.data : []); setLoading(false); })
       .catch(err => { console.error(err); setLoading(false); });
   }, [user]);
 

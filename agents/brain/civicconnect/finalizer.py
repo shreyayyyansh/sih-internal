@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from brain.civicconnect.state import AgentState, ReportCategory, SeverityLevel
@@ -49,8 +49,8 @@ class FinalVerdict(BaseModel):
 
 
 # ── LLM ────────────────────────────────────────────────────────────────────────
-judge_llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
+judge_llm = get_chat_model(
+    model="gemini-2.5-flash",
     temperature=0,
     max_retries=2,
 ).with_structured_output(FinalVerdict)

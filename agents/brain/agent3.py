@@ -2,14 +2,12 @@ import os
 import requests 
 from typing import List, Optional, Annotated, Dict, Any
 from pydantic import BaseModel, Field
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from dotenv import load_dotenv
 from langgraph.graph import END, START, StateGraph
 from langchain_core.messages import HumanMessage
 from datetime import datetime, timezone
 load_dotenv()
-if not os.getenv("GOOGLE_API_KEY"):
-    raise ValueError("GOOGLE_API_KEY not found! Please check your ai_engine/.env file.")
 class FrontendMessage(BaseModel):
     userId: str
     message: str
@@ -18,8 +16,8 @@ class GraphState(BaseModel):
     routeId: Optional[str] = Field(default=None, description="The active route ID")
     message: List[FrontendMessage] = Field(description="Chat history")
     context: Optional[str] = Field(default=None, description="AI Analysis Result")
-flash_model = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
+flash_model = get_chat_model(
+    model="gemini-2.5-flash",
     temperature=0, 
     max_retries=2,
 )

@@ -1,5 +1,5 @@
 import json
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from langchain_core.messages import HumanMessage
 from brain.gee.state import GeoIntelligenceState
 
@@ -22,7 +22,7 @@ def analyze_vision(state: GeoIntelligenceState) -> GeoIntelligenceState:
     
     Write a 3-4 sentence detailed analytical breakdown describing what this data implies for the region. Focus on the raw meaning of the numbers and trends. Do not format as JSON."""
 
-    model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.2)
+    model = get_chat_model(model="gemini-2.5-flash", temperature=0.2)
     print(f"👁️  [Vision] Analyzing primary metrics for {state['module_type']}...", flush=True)
     raw_analysis = model.invoke([HumanMessage(content=prompt)])
     print("✅ [Vision] Raw analysis complete.", flush=True)

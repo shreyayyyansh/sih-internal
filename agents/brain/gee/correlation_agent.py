@@ -1,6 +1,6 @@
 import json
 from typing import List, Dict, Any
-from langchain_google_genai import ChatGoogleGenerativeAI
+from brain.llm import get_chat_model
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 
@@ -32,7 +32,7 @@ async def run_deep_correlation(primary_module: str, primary_stats: Dict[str, Any
     Output a structured list of findings."""
 
     try:
-        model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.2)
+        model = get_chat_model(model="gemini-2.5-flash", temperature=0.2)
         structured_model = model.with_structured_output(CorrelationResponseModel)
         
         print(f"🔗 [Correlation] Reasoning across {len(secondary_results)} secondary modules for {primary_module}...", flush=True)

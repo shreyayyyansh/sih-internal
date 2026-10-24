@@ -27,6 +27,7 @@ import {
 import { FireSOSButton } from "./fireAlert.jsx"
 import { ref, onValue, off, update, get } from "firebase/database";
 import { db } from "../firebase/firebase.js"; 
+import { FEATURES as FEATURE_FLAGS } from "../config/features.js";
 
 const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
   const R = 6371e3; 
@@ -43,12 +44,15 @@ const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
   return R * c; 
 };
 
+// Cards whose `enabled` flag is false are DETACHED: hidden here and their routes
+// are not registered (see src/config/features.js). Flip the flag to bring one back.
 const FEATURES = [
   {
     id: "women-safety",
     title: "SisterHood",
     description: "Navigate with confidence using AI-driven safe routes, real-time tracking, and instant SOS alerts.",
     route: "/sisterhood",
+    enabled: FEATURE_FLAGS.sisterHood,
     icon: Shield,
     color: "pink"
   },
@@ -57,6 +61,7 @@ const FEATURES = [
     title: "CivicConnect",
     description: "Submit grievances related to infrastructure, electricity, water, and waste management",
     route: "/reports",
+    enabled: FEATURE_FLAGS.civicConnect,
     icon: Megaphone,
     color: "blue"
   },
@@ -65,6 +70,7 @@ const FEATURES = [
     title: "StreetGig",
     description: "Empower your livelihood by finding verified local job opportunities matched to your skills.",
     route: "/streetgigs",
+    enabled: FEATURE_FLAGS.streetGig,
     icon: Briefcase,
     color: "blue"
   },
@@ -73,6 +79,7 @@ const FEATURES = [
     title: "KindShare",
     description: "Bridge the gap between communities and NGOs for faster, more effective social impact.",
     route: "/kindshare",
+    enabled: FEATURE_FLAGS.kindShare,
     icon: Heart,
     color: "yellow"
   }
@@ -177,8 +184,10 @@ export default function App() {
     }
   };
 
+  // Fire SOS arrival/resolution tracking belongs to CivicConnect.
+  // DETACHED while FEATURE_FLAGS.civicConnect is false (no Firebase listeners).
   useEffect(() => {
-    if (!storedUser) return;
+    if (!storedUser || !FEATURE_FLAGS.civicConnect) return;
 
     const userEmail = storedUser.email; 
     const alertsRef = ref(db, 'fireAlerts');
@@ -362,7 +371,18 @@ export default function App() {
             </div>
           )}
 
-          <FireSOSButton />
+          {/* Fire SOS (CivicConnect) - DETACHED while FEATURE_FLAGS.civicConnect is false */}
+          {FEATURE_FLAGS.civicConnect && <FireSOSButton />}
+
+          {/* Switch to the government / administration side */}
+          <button
+            onClick={() => navigate("/administration")}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-200 hover:bg-purple-500/20 hover:text-white transition-all active:scale-95"
+            title="Switch to Administration"
+          >
+            <Landmark className="w-4 h-4" />
+            <span className="hidden sm:inline text-sm font-bold">Administration</span>
+          </button>
           
           
           {storedUser && (
@@ -431,12 +451,12 @@ export default function App() {
            </p>
         </div>
 
-        <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-10">
-           {FEATURES.map((feature) => (
+        <div className="w-full max-w-7xl flex flex-wrap justify-center gap-6 pb-10">
+           {FEATURES.filter((feature) => feature.enabled).map((feature) => (
              <PixelCard 
                key={feature.id} 
                variant={feature.color}
-               className="w-full aspect-[4/5] cursor-pointer hover:scale-[1.02] transition-transform duration-300 bg-zinc-900/40"
+               className="w-full sm:w-80 aspect-[4/5] cursor-pointer hover:scale-[1.02] transition-transform duration-300 bg-zinc-900/40"
                onClick={() => navigate(feature.route)}
              >
                 <div className="relative z-10 flex flex-col items-center text-center p-8 h-full justify-center gap-6 pointer-events-none">

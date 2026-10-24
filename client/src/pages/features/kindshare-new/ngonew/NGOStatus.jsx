@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { api } from "@/lib/api";
 
 const PAGE = { minHeight: "100vh", backgroundColor: "#050510", padding: "32px 40px" };
 const HEADER = { display: "flex", alignItems: "center", gap: "12px", marginBottom: "40px" };
@@ -14,8 +15,9 @@ export default function NGOStatus() {
   const id = params.get("id");
 
   useEffect(() => {
-    fetch(`http://localhost:3000/api/kindshare/ngos/status/${id}`)
-      .then(res => res.json()).then(data => setNgo(data));
+    api.get(`/api/kindshare/ngos/status/${id}`)
+      .then(res => setNgo(res.data))
+      .catch(err => console.error("Failed to load data", err));
   }, [id]);
 
   if (!ngo) return <div style={PAGE}><p style={{ color: "#a1a1aa" }}>Loading...</p></div>;

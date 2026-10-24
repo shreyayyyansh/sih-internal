@@ -1,30 +1,12 @@
-from google import genai
-import os
-from dotenv import load_dotenv
+from brain.llm import get_genai_client, get_project, get_location
 
-# Load env variables
-load_dotenv()
+print(f"Vertex AI project={get_project()} location={get_location()}")
 
-api_key = os.getenv("GOOGLE_API_KEY")
+client = get_genai_client()
 
-if not api_key:
-    print("❌ CRITICAL: GOOGLE_API_KEY is missing from .env file!")
-else:
-    print(f"✅ Found API Key: {api_key[:10]}... (hidden)")
-    
-    # Configure the SDK
-    client = genai.Client(api_key=api_key)
-    
-    print("\n--- QUERYING GOOGLE SERVERS ---")
-    try:
-        # Ask Google: "What models can I use?"
-        found_any = False
-        for m in client.models.list():
-            print(f"AVAILABLE MODEL: {m.name}")
-            found_any = True
-        
-        if not found_any:
-            print("⚠️ No content generation models found. Check your API Key permissions.")
-            
-    except Exception as e:
-        print(f"❌ API CONNECTION ERROR: {e}")
+print("\n--- QUERYING VERTEX AI ---")
+try:
+    response = client.models.generate_content(model="gemini-2.5-flash", contents="Reply with exactly: pong")
+    print(f"✅ gemini-2.5-flash replied: {response.text!r}")
+except Exception as e:
+    print(f"❌ API CONNECTION ERROR: {e}")

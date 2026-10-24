@@ -1,3 +1,6 @@
+// DETACHED (web, citizen side): this page is not routed while FEATURES.sisterHood is
+// false in src/config/features.js, so it never mounts and none of its API calls run.
+// The code is intact - set FEATURES.sisterHood = true to re-attach it.
 import { useState, useEffect, useRef } from "react"
 import { Button } from "../../../ui/button"
 import { House, Navigation, ArrowLeft, AlertTriangle, ChevronLeft, Mic, MicOff, MessageSquare, X, PanelLeftClose, PanelLeftOpen } from "lucide-react" // Added UI icons

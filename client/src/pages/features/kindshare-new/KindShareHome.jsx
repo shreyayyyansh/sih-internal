@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Package, Gift, Building2, ClipboardList, FileText, Settings, ArrowRight, Handshake } from "lucide-react";
+import { api } from "@/lib/api";
 
 const PAGE = { minHeight: "100vh", backgroundColor: "#050510", padding: "32px 40px" };
 const HEADER = { display: "flex", alignItems: "center", gap: "12px", marginBottom: "40px" };
@@ -17,9 +18,8 @@ export default function KindShareHome() {
     if (!isAuthenticated || !user) return;
     const checkRole = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/api/kindshare/users/role?email=${user.email}`);
-        const data = await res.json();
-        setRole(data.role);
+        const res = await api.get(`/api/kindshare/users/role?email=${user.email}`);
+        setRole(res.data.role);
       } catch (err) { console.error(err); }
     };
     checkRole();
@@ -27,10 +27,8 @@ export default function KindShareHome() {
 
   const fetchNGO = async () => {
     try {
-      const res = await fetch(`http://localhost:3000/api/kindshare/ngos/by-email?email=${user.email}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.ngoName) setNgoName(data.ngoName);
+      const res = await api.get(`/api/kindshare/ngos/by-email?email=${user.email}`);
+      if (res.data.ngoName) setNgoName(res.data.ngoName);
     } catch (err) { console.error("Fetch NGO Error:", err); }
   };
 

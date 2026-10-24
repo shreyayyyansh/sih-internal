@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { api } from "@/lib/api";
 
 const PAGE = { minHeight: "100vh", backgroundColor: "#050510", padding: "32px" };
 const HEADER = { display: "flex", alignItems: "center", gap: "12px", marginBottom: "32px" };
@@ -12,9 +13,9 @@ export default function DonationStatus() {
   const [donation, setDonation] = useState(null);
 
   useEffect(() => {
-    fetch(`http://localhost:3000/api/kindshare/donations/status/${id}`)
-      .then(res => res.json())
-      .then(data => setDonation(data));
+    api.get(`/api/kindshare/donations/status/${id}`)
+      .then(res => setDonation(res.data))
+      .catch(err => console.error("Failed to load data", err));
   }, [id]);
 
   if (!donation) return <div style={PAGE}><p style={{ color: "#a1a1aa" }}>Loading...</p></div>;

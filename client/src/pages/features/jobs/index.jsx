@@ -1,3 +1,6 @@
+// DETACHED (web, citizen side): this page is not routed while FEATURES.streetGig is
+// false in src/config/features.js, so it never mounts and none of its API calls run.
+// The code is intact - set FEATURES.streetGig = true to re-attach it.
 import { useEffect, useState } from "react";
 import { ref, set, serverTimestamp } from "firebase/database";
 import { api } from "../../../lib/api.js";

@@ -3,13 +3,13 @@ import asyncio
 from typing import Literal
 
 import httpx
-from google import genai
 from PIL import Image
 from io import BytesIO
 from dotenv import load_dotenv
 from datetime import datetime, timezone
 from langgraph.graph import StateGraph, START, END
 from brain.civicconnect.state import AgentState
+from brain.llm import get_genai_client
 
 load_dotenv()
 
@@ -17,10 +17,7 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:3000")
 DUPLICATE_RADIUS_M = int(os.getenv("DUPLICATE_RADIUS_M", "6"))
 REQUEST_TIMEOUT = 12  # seconds
 
-if not os.getenv("GOOGLE_API_KEY"):
-    raise ValueError("GOOGLE_API_KEY not found!")
-
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+client = get_genai_client()
 
 
 # ── Image download (async, concurrent) ────────────────────────────────────────
@@ -65,7 +62,7 @@ async def verify_image_similarity_async(new_url: str, existing_url: str) -> bool
         )
         
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=[prompt, img_new, img_existing]
         )
         result = response.text.strip().upper()
