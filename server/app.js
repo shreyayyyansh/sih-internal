@@ -1,0 +1,140 @@
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+
+import connectDB from "./src/config/dbMongo.js";
+connectDB();
+
+// Route Imports
+import authRoutes from "./src/routes/auth.js";
+import roomRoutes from "./src/routes/room.js";
+import modelRoutes from "./src/routes/model.js";
+import geeRoutes from "./src/routes/geeRoutes.js";
+import donationRoutes from "./src/routes/donation.routes.js";
+import interestRoutes from "./src/routes/interest.routes.js";
+import garbageRoutes from "./src/routes/garbage.route.js";
+import jobRoutes from "./src/routes/job.route.js";
+import setalertRoutes from "./src/routes/setalertsRoutes.js";
+import chatRoutes from "./src/routes/chat.routes.js";
+import complaintRoutes from "./src/routes/complaint.routes.js";
+import complaintStatsRoutes from "./src/routes/complaintStats.routes.js";
+import complaintHistoryRoutes from "./src/routes/complaintHistory.routes.js";
+import voiceRoutes from "./src/routes/voiceRoutes.js"
+import localityRoutes from "./src/routes/locality.routes.js"
+import reportRoutes from "./src/routes/report.routes.js"
+import userRoutes from "./src/routes/user.routes.js"
+import mapReports from "./src/routes/mapReports.js";
+import blocksRoutes from "./src/routes/blocks.route.js";
+import kindshareRoutes from "./src/routes/kindshare/index.js";
+
+
+
+
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+
+
+
+
+
+console.log("CORS ORIGIN:", process.env.CORS_ORIGIN);
+
+app.use(
+  cors({
+    origin: [process.env.CORS_ORIGIN, "http://localhost:5173", "http://10.98.133.11:3000"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE","PATCH"]
+  })
+);
+
+app.use(express.json());
+app.use(cookieParser());
+app.use("/api/kindshare", kindshareRoutes);
+
+
+
+export const clients = {};
+
+app.get('/notifications/:userId', (req, res) => {
+    const { userId } = req.params;
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+
+    clients[userId] = res;
+    
+    
+    res.write(`data: ${JSON.stringify({ type: 'connection_ack', message: 'Connected!' })}\n\n`);
+    
+    console.log(`[SSE] User connected: ${userId}`);
+
+    
+    req.on('close', () => {
+        console.log(`[SSE] User disconnected: ${userId}`);
+        delete clients[userId];
+    });
+});
+
+
+import notification  from "./src/routes/notification.route.js";
+app.use("/api/notifications",notification);
+
+
+
+app.use("/api/auth", authRoutes);
+app.use("/api/room", roomRoutes);
+app.use("/api/model", modelRoutes);
+app.use("/api/gee", geeRoutes);
+app.use("/api/donations", donationRoutes);
+app.use("/api/interests", interestRoutes);
+app.use("/api/garbage", garbageRoutes);
+app.use("/api/jobs", jobRoutes);
+app.use("/api/alerts", setalertRoutes);
+
+import municipalRoute from "./src/routes/waste.route.js"
+
+app.use("/api/municipal",municipalRoute);
+
+
+
+
+
+
+import staff from "./src/routes/staff.js"
+app.use("/api/staff",staff);
+
+
+import trackReport from "./src/routes/track.route.js"
+app.use("/api/track",trackReport);
+
+app.use('/uploads', express.static('uploads'));
+app.use("/api/chats", chatRoutes);
+app.use("/api/complaints", complaintRoutes);
+app.use("/api/complaint-stats",complaintStatsRoutes);
+app.use("/api/complaint-history",complaintHistoryRoutes);
+app.use("/api/voice",voiceRoutes);
+app.use("/api/locality",localityRoutes)
+app.use("/api/user",userRoutes)
+app.use("/api/reports",reportRoutes)
+app.use("/map-reports", mapReports);
+app.use("/api/blocks", blocksRoutes);
+
+import urbanconnectRoutes from "./src/routes/urbanconnect.route.js";
+app.use("/api/urbanconnect", urbanconnectRoutes);
+
+import announcementRoutes from "./src/routes/announcement.routes.js";
+app.use("/api/announcements", announcementRoutes);
+
+import civicAnalyticsRoutes from "./src/routes/civicAnalytics.routes.js";
+app.use("/api/civic-analytics", civicAnalyticsRoutes);
+
+import cityPulseRoutes from "./src/routes/cityPulse.routes.js";
+app.use("/api/city-pulse", cityPulseRoutes);
+
+app.get("/health", (req, res) => res.status(200).json({ message: "server is healthy" }));
+
+export { app };
