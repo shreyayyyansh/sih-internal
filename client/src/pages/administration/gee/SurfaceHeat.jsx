@@ -3,7 +3,7 @@ import RegionSelector from '../../../components/RegionSelector.jsx';
 import { ThermometerSun, Settings2, Calendar, Maximize2, Loader2, Flame, ArrowLeft } from 'lucide-react';
 import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from 'react-router-dom';
-import { api } from '../../../lib/api.js';
+import { geeApi } from '../../../lib/api.js';
 
 export default function SurfaceHeat() {
   const [selectedCoordinates, setSelectedCoordinates] = useState(null);
@@ -43,7 +43,7 @@ export default function SurfaceHeat() {
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
       });
 
-      const response = await api.post('/api/gee/generateLandHeatReport', requestPayload, {
+      const response = await geeApi.post('/api/gee/generateLandHeatReport', requestPayload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

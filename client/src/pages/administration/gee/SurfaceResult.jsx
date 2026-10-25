@@ -40,11 +40,11 @@ export default function SurfaceHeatResult() {
     }
   }
 
-  if (!result || !result.data_found) {
+  if (!result || !result.data_found || result.value_valid === false) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-500 gap-4 p-4 text-center">
         <ThermometerSun className="w-12 h-12 text-slate-300" />
-        <p>No thermal analysis data found. Please run a new analysis.</p>
+        <p>{result?.message || "No thermal analysis data found. Please run a new analysis."}</p>
         <button onClick={() => navigate('/surface-heat')} className="text-blue-600 font-bold hover:underline">
           Go Back
         </button>

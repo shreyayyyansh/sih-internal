@@ -1,8 +1,18 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader, DrawingManager } from '@react-google-maps/api';
-import { Trash2, Loader2, MapPin } from 'lucide-react';
+import { GoogleMap, useJsApiLoader, Polygon, Polyline, Marker } from '@react-google-maps/api';
+import { Trash2, Loader2, Undo2, Check } from 'lucide-react';
 
-const LIBRARIES = ['drawing', 'places'];
+// The 'drawing' library (DrawingManager) was removed in Maps JS API 3.65,
+// so polygons are drawn manually: click to add points, finish to close.
+const LIBRARIES = ['places'];
+
+const polygonStyle = {
+  fillColor: '#10b981',
+  fillOpacity: 0.4,
+  strokeWeight: 2,
+  strokeColor: '#10b981',
+  zIndex: 1,
+};
 
 const containerStyle = {
   width: '100%',
@@ -43,7 +53,8 @@ export default function RegionSelector({ onRegionSelect }) {
   });
 
   const [map, setMap] = useState(null);
-  const [drawingMode, setDrawingMode] = useState(null);
+  const [isDrawing, setIsDrawing] = useState(true);
+  const [draftPath, setDraftPath] = useState([]);
   const [polygonPath, setPolygonPath] = useState([]);
   const [center, setCenter] = useState(defaultCenter);
   const [zoom, setZoom] = useState(5);
@@ -74,40 +85,57 @@ export default function RegionSelector({ onRegionSelect }) {
 
   const onLoad = useCallback(function callback(map) {
     setMap(map);
-    setDrawingMode('polygon');
   }, []);
 
   const onUnmount = useCallback(function callback(map) {
     setMap(null);
   }, []);
 
-  const onPolygonComplete = (polygon) => {
-    if (polygonRef.current) {
-      polygonRef.current.setMap(null);
-    }
-    polygonRef.current = polygon;
-
+  const readPolygonPath = (polygon) => {
     const path = polygon.getPath();
     const coordinates = [];
     for (let i = 0; i < path.getLength(); i++) {
       const point = path.getAt(i);
       coordinates.push({ lat: point.lat(), lng: point.lng() });
     }
+    return coordinates;
+  };
 
+  const commitPath = (coordinates) => {
     setPolygonPath(coordinates);
-    setDrawingMode(null);
-    
     if (onRegionSelect) {
       onRegionSelect(coordinates);
     }
   };
 
-  const handleClear = () => {
+  const handleMapClick = (e) => {
+    if (!isDrawing) return;
+    setDraftPath((prev) => [...prev, { lat: e.latLng.lat(), lng: e.latLng.lng() }]);
+  };
+
+  const handleFinish = () => {
+    if (draftPath.length < 3) return;
+    setIsDrawing(false);
+    commitPath(draftPath);
+    setDraftPath([]);
+  };
+
+  const handleUndo = () => {
+    setDraftPath((prev) => prev.slice(0, -1));
+  };
+
+  // Vertex drags / midpoint inserts on the editable polygon
+  const handlePolygonEdit = () => {
     if (polygonRef.current) {
-      polygonRef.current.setMap(null);
+      commitPath(readPolygonPath(polygonRef.current));
     }
+  };
+
+  const handleClear = () => {
+    polygonRef.current = null;
     setPolygonPath([]);
-    setDrawingMode('polygon');
+    setDraftPath([]);
+    setIsDrawing(true);
     if (onRegionSelect) onRegionSelect(null);
   };
 
@@ -128,34 +156,53 @@ export default function RegionSelector({ onRegionSelect }) {
         zoom={zoom}
         onLoad={onLoad}
         onUnmount={onUnmount}
+        onClick={handleMapClick}
         options={{
           mapTypeId: 'hybrid', // 'hybrid' gives you satellite + borders (better context than pure satellite)
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: true,
+          disableDoubleClickZoom: isDrawing,
+          draggableCursor: isDrawing ? 'crosshair' : undefined,
           styles: mapStyles, // <--- THIS REMOVES THE PLACES
         }}
       >
-        <DrawingManager
-          onPolygonComplete={onPolygonComplete}
-          drawingMode={drawingMode}
-          options={{
-            drawingControl: true,
-            drawingControlOptions: {
-              position: window.google.maps.ControlPosition.TOP_CENTER,
-              drawingModes: ['polygon'],
-            },
-            polygonOptions: {
-              fillColor: '#10b981',
-              fillOpacity: 0.4,
-              strokeWeight: 2,
-              strokeColor: '#10b981',
-              clickable: false,
-              editable: true,
-              zIndex: 1,
-            },
-          }}
-        />
+        {isDrawing && draftPath.length > 0 && (
+          <>
+            <Polyline
+              path={draftPath}
+              options={{ ...polygonStyle, clickable: false }}
+            />
+            {draftPath.map((point, i) => (
+              <Marker
+                key={i}
+                position={point}
+                clickable={i === 0 && draftPath.length >= 3}
+                onClick={handleFinish}
+                icon={{
+                  path: window.google.maps.SymbolPath.CIRCLE,
+                  scale: i === 0 ? 7 : 5,
+                  fillColor: '#ffffff',
+                  fillOpacity: 1,
+                  strokeColor: '#10b981',
+                  strokeWeight: 2,
+                }}
+              />
+            ))}
+          </>
+        )}
+
+        {!isDrawing && polygonPath.length > 0 && (
+          <Polygon
+            path={polygonPath}
+            editable
+            options={{ ...polygonStyle, clickable: true }}
+            onLoad={(polygon) => { polygonRef.current = polygon; }}
+            onUnmount={() => { polygonRef.current = null; }}
+            onMouseUp={handlePolygonEdit}
+            onDragEnd={handlePolygonEdit}
+          />
+        )}
       </GoogleMap>
 
       {/* Floating Control Panel */}
@@ -182,8 +229,37 @@ export default function RegionSelector({ onRegionSelect }) {
              </button>
           </div>
         ) : (
-          <div className="text-sm text-slate-400 italic">
-            Use the tool above to draw a shape...
+          <div className="space-y-3">
+            <div className="text-sm text-slate-400 italic">
+              {draftPath.length === 0
+                ? 'Click on the map to start drawing a region...'
+                : `${draftPath.length} point${draftPath.length === 1 ? '' : 's'} added${draftPath.length < 3 ? ' (need at least 3)' : ' — click the first point or Finish'}`}
+            </div>
+            {draftPath.length > 0 && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleFinish}
+                  disabled={draftPath.length < 3}
+                  className="flex items-center gap-2 text-xs bg-emerald-50 text-emerald-700 px-3 py-2 rounded-lg font-bold hover:bg-emerald-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Check className="w-3 h-3" />
+                  Finish
+                </button>
+                <button
+                  onClick={handleUndo}
+                  className="flex items-center gap-2 text-xs bg-slate-100 text-slate-600 px-3 py-2 rounded-lg font-bold hover:bg-slate-200 transition-colors"
+                >
+                  <Undo2 className="w-3 h-3" />
+                  Undo
+                </button>
+                <button
+                  onClick={handleClear}
+                  className="flex items-center gap-2 text-xs bg-red-50 text-red-600 px-3 py-2 rounded-lg font-bold hover:bg-red-100 transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

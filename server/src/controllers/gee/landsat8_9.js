@@ -105,7 +105,11 @@ export async function generateLandHeatReport(req, res) {
 
         const userId = req.auth.payload.sub;
         console.log("userid", userId);
-        if (landheat_analysis_result.status === 'success') {
+        // No cloud-free pixels means no temperatures: don't save an empty report or run the AI on it
+        const hasValidData = landheat_analysis_result.status === 'success'
+            && landheat_analysis_result.data_found
+            && landheat_analysis_result.value_valid !== false;
+        if (hasValidData) {
             try {
                 const report = await db.collection('landheat_reports').doc(userId).collection('reports').add({
                     parameters: {
@@ -128,7 +132,7 @@ export async function generateLandHeatReport(req, res) {
         let intelligence_report = null;
         let composite_findings = [];
 
-        if (landheat_analysis_result.status === 'success') {
+        if (hasValidData) {
             try {
                 const [o3Settled, deforestSettled] = await Promise.allSettled([
                   runAirQualityCheck(sanitizedGeoJson, regionId, credentialsPath, 'O3', 0.1, bufferMeters || 1000, 6),

@@ -3,7 +3,7 @@ import RegionSelector from '../../../components/RegionSelector.jsx';
 import { Factory, Settings2, Calendar, Maximize2, Activity, Loader2, Satellite, Wind, CloudFog, AlertCircle, Droplets, ArrowLeft } from 'lucide-react';
 import { useAuth0 } from "@auth0/auth0-react"; 
 import { useNavigate } from 'react-router-dom'; 
-import { api } from '../../../lib/api.js';
+import { geeApi } from '../../../lib/api.js';
 
 export default function Pollutants() {
   const [selectedCoordinates, setSelectedCoordinates] = useState(null);
@@ -63,7 +63,7 @@ export default function Pollutants() {
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
       });
 
-      const response = await api.post('/api/gee/generatePollutantsReport', requestPayload, {
+      const response = await geeApi.post('/api/gee/generatePollutantsReport', requestPayload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

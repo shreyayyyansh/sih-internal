@@ -7,6 +7,12 @@ export const api = axios.create({
   timeout: 60000,
 });
 
+// GEE report generation runs satellite analysis + AI agents before responding
+export const geeApi = axios.create({
+  baseURL: API_URL,
+  timeout: 180000,
+});
+
 export const verifyCleanup = async (reportId, file, lat, lng, token) => {
   const formData = new FormData();
   formData.append("image", file);

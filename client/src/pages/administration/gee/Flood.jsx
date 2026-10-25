@@ -3,7 +3,7 @@ import RegionSelector from '../../../components/RegionSelector.jsx';
 import { CloudRain, Settings2, Calendar, Maximize2, Activity, Loader2, Waves, Radar, ArrowLeft } from 'lucide-react';
 import { useAuth0 } from "@auth0/auth0-react"; 
 import { useNavigate } from 'react-router-dom'; 
-import { api } from '../../../lib/api.js';
+import { geeApi } from '../../../lib/api.js';
 
 export default function Flood() {
   const [selectedCoordinates, setSelectedCoordinates] = useState(null);
@@ -46,7 +46,7 @@ export default function Flood() {
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
       });
 
-      const response = await api.post('/api/gee/generateFloodReport', requestPayload, {
+      const response = await geeApi.post('/api/gee/generateFloodReport', requestPayload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

@@ -15,8 +15,8 @@ export async function getGeoScopeHistory(req, res) {
             { id: 'fire', name: 'fire_reports' },
             { id: 'coastal', name: 'coastal_reports' },
             { id: 'flood', name: 'flood_reports' },
-            { id: 'pollutants', name: 'pollution_reports' },
-            { id: 'surface_heat', name: 'surfaceHeat_reports' }
+            { id: 'pollutants', name: 'pollutant_reports' },
+            { id: 'surface_heat', name: 'landheat_reports' }
         ];
 
         let allReports = [];

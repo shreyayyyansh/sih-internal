@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import RegionSelector from '../../../components/RegionSelector.jsx';
 import { Waves, AlertTriangle, ArrowRight, Calendar, Satellite, ArrowLeft } from 'lucide-react';
-import { api } from "../../../lib/api.js";
+import { geeApi } from "../../../lib/api.js";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from 'react-router-dom';
 
@@ -51,7 +51,7 @@ export default function CoastalErosion() {
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
       });
 
-      const response = await api.post('/api/gee/generateCoastalReport', requestPayload, {
+      const response = await geeApi.post('/api/gee/generateCoastalReport', requestPayload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

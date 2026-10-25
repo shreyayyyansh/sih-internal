@@ -13,6 +13,10 @@ GCP_PROJECT_ID = os.environ.get('GEE_PROJECT_ID')
 RECENT_PERIOD_DAYS = 16
 DEFAULT_TEMP_THRESHOLD = 40.0  # Celsius
 DEFAULT_BUFFER = 5000
+LANDSAT_COLLECTIONS = ["LANDSAT/LC09/C02/T1_L2", "LANDSAT/LC08/C02/T1_L2"]
+
+# QA_PIXEL bits: 0 fill, 1 dilated cloud, 2 cirrus, 3 cloud, 4 cloud shadow
+QA_BAD_PIXEL_BITS = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4)
 
 def initialize_gee(credentials_path_arg):
     try:
@@ -47,6 +51,12 @@ def get_heatmap_url(image, region_geometry, vis_params):
     except Exception as e:
         print(f"WARNING: Thumbnail generation failed: {e}", file=sys.stderr)
         return None
+
+def mask_clouds(image):
+    # Cloud tops read far colder than the ground (down to -120C), so they must be dropped
+    qa = image.select('QA_PIXEL')
+    clear = qa.bitwiseAnd(QA_BAD_PIXEL_BITS).eq(0)
+    return image.select('ST_B10').updateMask(clear)
     
 
 def check_heat_islands(region_geometry, threshold, recentDays):
@@ -56,51 +66,60 @@ def check_heat_islands(region_geometry, threshold, recentDays):
         end_date = ee.Date(now)
         start_date = end_date.advance(-recentDays, 'day')
 
-        # 2. Priority Switching Logic
-        satellite_priority = [
-            {"name": "Landsat 9", "id": "LANDSAT/LC09/C02/T1_L2"},
-            {"name": "Landsat 8", "id": "LANDSAT/LC08/C02/T1_L2"}
-        ]
+        # 2. Landsat 8 + 9 together (8-day combined revisit). Scene-level CLOUD_COVER is
+        #    for the whole 185km scene, so judge cloudiness per pixel over the region instead.
+        collection = (ee.ImageCollection(LANDSAT_COLLECTIONS[0])
+                      .merge(ee.ImageCollection(LANDSAT_COLLECTIONS[1]))
+                      .filterBounds(region_geometry)
+                      .filterDate(start_date, end_date)
+                      .select(['ST_B10', 'QA_PIXEL']))
 
-        latest_image = None
-        used_sat_name = None
+        def with_clear_count(image):
+            clear = mask_clouds(image)
+            clear_pixels = clear.reduceRegion(
+                reducer=ee.Reducer.count(), geometry=region_geometry,
+                scale=30, bestEffort=True, maxPixels=1e9
+            ).get('ST_B10')
+            return clear.set('clear_pixels', clear_pixels)
 
-        for sat in satellite_priority:
-            print(f"UrbanFlow: Checking {sat['name']} ({sat['id']})...", file=sys.stderr)
-            
-            collection = (ee.ImageCollection(sat['id'])
-                       .filterBounds(region_geometry)
-                       .filterDate(start_date, end_date)
-                       .filter(ee.Filter.lt('CLOUD_COVER', 100)) 
-                       .select('ST_B10')) 
+        usable = (collection.map(with_clear_count)
+                  .filter(ee.Filter.gt('clear_pixels', 0))
+                  .sort('system:time_start', False))
 
-            count = collection.size().getInfo()
-            
-            if count > 0:
-                latest_image = collection.sort('system:time_start', False).first()
-                used_sat_name = sat['name']
-                print(f"UrbanFlow: Found {count} images in {sat['name']}. Using latest.", file=sys.stderr)
-                break
-            else:
-                print(f"UrbanFlow: No recent data found in {sat['name']}. Switching to next...", file=sys.stderr)
+        total_count = collection.size().getInfo()
+        count = usable.size().getInfo()
+        print(f"UrbanFlow: {total_count} Landsat passes in window, {count} with cloud-free pixels over region.", file=sys.stderr)
 
-        if latest_image is None:
+        if total_count == 0:
             return {
-                "status": "success", 
-                "message": f"No clear thermal data found.",
+                "status": "success",
+                "message": f"No Landsat pass over this region in the last {recentDays} days.",
                 "data_found": False,
                 "heatmap_url": None,
                 "tile_url": None
             }
 
-        # 4. Get Metadata
+        if count == 0:
+            return {
+                "status": "success",
+                "message": f"{total_count} Landsat pass{'es' if total_count != 1 else ''} in the last {recentDays} days, but clouds covered this region every time. Try a longer look-back period.",
+                "data_found": True,
+                "value_valid": False,
+                "heatmap_url": None,
+                "tile_url": None
+            }
+
+        # 4. Get Metadata (latest pass that actually saw the ground)
+        latest_image = usable.first()
         latest_info = latest_image.getInfo()
         latest_id = latest_info['id']
         latest_timestamp = latest_info['properties']['system:time_start']
         date_str = datetime.datetime.fromtimestamp(latest_timestamp / 1000.0, datetime.timezone.utc).strftime('%Y-%m-%d')
+        spacecraft = sorted(set(usable.aggregate_array('SPACECRAFT_ID').getInfo()))
+        used_sat_name = " + ".join(sc.replace('LANDSAT_', 'Landsat ') for sc in spacecraft)
         
-        # 5. Process Temperature (Kelvin -> Celsius)
-        temp_celsius = latest_image.multiply(0.00341802).add(149.0).subtract(273.15)
+        # 5. Process Temperature (Kelvin -> Celsius) on the median of cloud-free pixels
+        temp_celsius = usable.median().multiply(0.00341802).add(149.0).subtract(273.15)
 
         # 6. Statistics
         stats = temp_celsius.reduceRegion(
@@ -178,6 +197,7 @@ def check_heat_islands(region_geometry, threshold, recentDays):
             "image_date": date_str,
             "satellite_source": used_sat_name,
             "latest_image_id": latest_id,
+            "scenes_used": count,
             "heatmap_url": heatmap_url,
             "tile_url": tile_url,
             "dates": {

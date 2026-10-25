@@ -3,7 +3,7 @@ import RegionSelector from '../../../components/RegionSelector.jsx';
 import { Flame, Settings2, Calendar, Maximize2, Loader2, Satellite, ArrowLeft } from 'lucide-react';
 import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from 'react-router-dom';
-import { api } from '../../../lib/api.js';
+import { geeApi } from '../../../lib/api.js';
 
 export default function Fire() {
   const [selectedCoordinates, setSelectedCoordinates] = useState(null);
@@ -41,7 +41,7 @@ export default function Fire() {
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
       });
 
-      const response = await api.post('/api/gee/generateFireReport', requestPayload, {
+      const response = await geeApi.post('/api/gee/generateFireReport', requestPayload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
