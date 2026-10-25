@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { ref, remove } from 'firebase/database';
 import { db } from '../../../../../lib/firebase';
 import { removeFromRTDB } from './Rtdbdel';
+import { clearSosBroadcast } from './sosBroadcast';
 
 /**
  * Standalone cleanup function — callable from background notification actions.
@@ -19,8 +20,9 @@ export const performExitCleanup = async ({ userId, blocks, lastGeo6, sosActive }
         cleanupTasks.push(removeFromRTDB(blocks, userId));
     }
 
-    if (sosActive && lastGeo6) {
-        cleanupTasks.push(remove(ref(db, `active_sos/${lastGeo6}/${userId}`)));
+    if (sosActive) {
+        // Also clears the cell of the last broadcast, which can differ from lastGeo6
+        cleanupTasks.push(clearSosBroadcast(userId, lastGeo6));
     }
 
     try {

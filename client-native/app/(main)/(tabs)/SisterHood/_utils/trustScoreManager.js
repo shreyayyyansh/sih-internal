@@ -1,6 +1,6 @@
 /**
  * trustScoreManager.js
- * Pure math utilities for the trust score lifecycle and block safety impact system.
+ * Pure math utilities for the trust score lifecycle.
  * No external dependencies — safe to import anywhere.
  */
 
@@ -11,12 +11,6 @@ const SAFE_WALK_STREAK_THRESHOLD = 5;
 const SAFE_WALK_BONUS = 0.5;
 const FALSE_ALARM_DECAY = 0.4;
 const REAL_EMERGENCY_BOOST = 1.0;
-const BLOCK_IMPACT_SCALE = 0.05; // Controls the Reverse Gaussian decay rate
-// Progressive score examples (trust_score=5 per event):
-//   1 SOS  → impact=5,  score ≈ 7.8
-//   3 SOS  → impact=15, score ≈ 4.7
-//   6 SOS  → impact=30, score ≈ 2.2
-//   10 SOS → impact=50, score ≈ 1.1 → nearing floor
 
 // ─────────────────────────────────────────────
 // System 1: Trust Score Lifecycle
@@ -75,55 +69,5 @@ export const applySafeWalkStreakBonus = (trustScore, streak, isVerified) => {
   };
 };
 
-// ─────────────────────────────────────────────
-// System 2: Block Safety Score Impact
-// ─────────────────────────────────────────────
-
-/**
- * Returns a multiplier based on the current hour.
- * Late night / early morning SOS carries more danger weight.
- * 10pm–4am → 1.5x | 8am–6pm → 0.7x | shoulders → 1.0x
- */
-const getTimeOfDayMultiplier = () => {
-  const hour = new Date().getHours();
-  if (hour >= 22 || hour <= 4) return 1.5;
-  if (hour >= 8 && hour <= 18) return 0.7;
-  return 1.0;
-};
-
-/**
- * Decays accumulated weighted impact based on time elapsed since
- * the last SOS event. Half-life ≈ 70 hours (3 days of quiet = safer block).
- */
-const applyTimeDecay = (impact, lastUpdated) => {
-  if (!lastUpdated || !impact) return impact || 0;
-  const hoursSince = (Date.now() - lastUpdated) / (1000 * 60 * 60);
-  return impact * Math.exp(-0.01 * hoursSince);
-};
-
-/**
- * Computes the new block safety score using a time-aware Reverse Gaussian model.
- *
- *   effectiveTrust    = trustScore × timeOfDayMultiplier
- *   decayedImpact     = oldImpact × e^(−0.01 × hoursSinceLast)
- *   newWeightedImpact = decayedImpact + effectiveTrust
- *   current_score     = max(1.0, 10 × e^(−SCALE × newWeightedImpact))
- *
- * @param {number} currentWeightedImpact
- * @param {number} trustScore
- * @param {number|null} lastUpdated - timestamp (ms) of last block update
- * @returns {{ newWeightedImpact: number, newCurrentScore: number }}
- */
-export const computeBlockSafetyImpact = (currentWeightedImpact, trustScore, lastUpdated = null) => {
-  const effectiveTrust = (trustScore || 5.0) * getTimeOfDayMultiplier();
-  const decayedImpact = applyTimeDecay(currentWeightedImpact || 0, lastUpdated);
-  const newWeightedImpact = decayedImpact + effectiveTrust;
-  const rawScore = 10 * Math.exp(-BLOCK_IMPACT_SCALE * newWeightedImpact);
-  const newCurrentScore = Math.max(1.0, parseFloat(rawScore.toFixed(2)));
-
-  return {
-    newWeightedImpact: parseFloat(newWeightedImpact.toFixed(4)),
-    newCurrentScore,
-  };
-};
-
+// Block safety scores are computed offline on the server (server/src/jobs/safetyScoreJob.js)
+// from logged SOS events; the app no longer writes them.

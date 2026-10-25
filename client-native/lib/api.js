@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getStoredAccessToken } from "./auth0Client";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 if (!API_URL) throw new Error("EXPO_PUBLIC_API_URL is not defined");
@@ -12,13 +13,13 @@ export const api = axios.create({
 let getAuth0Token = null;
 export const setAuth0TokenGetter = (fn) => { getAuth0Token = fn; };
 
-// 🚀 Automatically add the token to EVERY request
+// 🚀 Automatically add the token to EVERY request.
+// Falls back to the stored Auth0 credentials, so it also works outside React (headless SOS actions).
 api.interceptors.request.use(async (config) => {
-  if (getAuth0Token) {
-    const token = await getAuth0Token();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+  if (config.headers.Authorization) return config; // caller already set one
+  const token = getAuth0Token ? await getAuth0Token() : await getStoredAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });

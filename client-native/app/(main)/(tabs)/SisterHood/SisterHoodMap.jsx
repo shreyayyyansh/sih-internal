@@ -1,9 +1,9 @@
 import * as Location from 'expo-location';
-import { off, onValue, ref, remove, runTransaction, set, update } from 'firebase/database';
+import { endAt, onValue, orderByKey, query, ref, startAt, update } from 'firebase/database';
 import { AlertTriangle, ArrowLeft, Compass, Shield } from 'lucide-react-native';
 import ngeohash from 'ngeohash';
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, AppState, DeviceEventEmitter, PixelRatio, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, AppState, DeviceEventEmitter, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MapView, { AnimatedRegion, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 import { db } from '../../../../lib/firebase';
@@ -11,13 +11,14 @@ import { useAuthStore } from '../../../../store/useAuthStore';
 import SOSBottomBar from './_components/SOSBottomBar';
 import SOSResolutionModal from './_components/SOSResolutionModal';
 import { getPersistedState, persistTrackingState, requestBackgroundLocationPermissions, startBackgroundService, stopBackgroundService } from './_utils/backgroundService';
+import { createLocationFilter } from './_utils/locationFilter';
 import { calculateBearing, calculateDistance } from './_utils/locationMath';
 import { dismissPersistentNotification, showPersistentNotification } from './_utils/notificationActions';
 import { addToRTDB } from './_utils/Rtdbadd';
 import { removeFromRTDB } from './_utils/Rtdbdel';
+import { broadcastSosLocation, clearSosBroadcast } from './_utils/sosBroadcast';
+import { endSosSession, reportSosEvent, resolveSosEvent } from './_utils/sosEvents';
 import { getInitialStationaryBlocks } from './_utils/stationaryManager';
-import { computeBlockSafetyImpact } from './_utils/trustScoreManager';
-import useCompass from './_utils/useCompass';
 import { useGracefulExit } from './_utils/useGracefulExit';
 import { useSafetyScore } from './_utils/useSafetyScore';
 import { useTrustScore } from './_utils/useTrustScore';
@@ -25,6 +26,115 @@ import { startVolumeListener, stopVolumeListener } from './_utils/volumeTrigger'
 import { evaluateSlidingWindow, getForwardBlocks } from './_utils/windowManager';
 
 const DISTANCE_THRESHOLD = 15;
+const NEARBY_SOS_RADIUS_M = 2500;
+const CAMERA_FOLLOW_INTERVAL_MS = 3000;
+const CAMERA_ANIMATION_MS = 800;         // shorter than the follow interval so animations never chain
+const STATE_UPDATE_MIN_MOVE_M = 3;       // re-render only for real movement
+const BEARING_MIN_DISPLACEMENT_M = 10;   // two fixes 2 m apart are inside GPS noise
+const HEADING_MIN_SPEED_MPS = 0.8;       // below this, coords.heading is unreliable
+const GEO8_SWITCH_CONFIRMATIONS = 2;     // hysteresis for the displayed safety cell
+const AHEAD_BLOCKS = 3;                  // 3 × 30 m ≈ the next 100 m
+
+// Hoisted so MapView doesn't get a new style array on every render
+const MAP_STYLE = [
+    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+    {
+        featureType: "administrative.locality",
+        elementType: "labels.text.fill",
+        stylers: [{ color: "#d59563" }],
+    },
+    {
+        featureType: "poi",
+        elementType: "labels.text.fill",
+        stylers: [{ color: "#d59563" }],
+    },
+    {
+        featureType: "road",
+        elementType: "geometry",
+        stylers: [{ color: "#38414e" }],
+    },
+    {
+        featureType: "road",
+        elementType: "geometry.stroke",
+        stylers: [{ color: "#212a37" }],
+    },
+    {
+        featureType: "road.highway",
+        elementType: "geometry",
+        stylers: [{ color: "#746855" }],
+    },
+    {
+        featureType: "road.highway",
+        elementType: "geometry.stroke",
+        stylers: [{ color: "#1f2835" }],
+    },
+    {
+        featureType: "water",
+        elementType: "geometry",
+        stylers: [{ color: "#17263c" }],
+    },
+    {
+        featureType: "water",
+        elementType: "labels.text.fill",
+        stylers: [{ color: "#515c6d" }],
+    },
+    {
+        featureType: "water",
+        elementType: "labels.text.stroke",
+        stylers: [{ color: "#17263c" }],
+    },
+];
+
+/**
+ * Remote SOS marker. Glides to each new broadcast position instead of jumping, and only
+ * repaints its custom view for the first moment after mounting.
+ */
+function SOSMarker({ threat }) {
+    const coordinate = useRef(new AnimatedRegion({
+        latitude: threat.lat,
+        longitude: threat.lng,
+        latitudeDelta: 0,
+        longitudeDelta: 0,
+    })).current;
+    const [tracksViewChanges, setTracksViewChanges] = useState(true);
+
+    useEffect(() => {
+        coordinate.timing({
+            latitude: threat.lat,
+            longitude: threat.lng,
+            duration: 1000,
+            useNativeDriver: false,
+        }).start();
+    }, [threat.lat, threat.lng]);
+
+    // Custom-view markers need one live render to be snapshotted; after that, stop repainting every frame
+    useEffect(() => {
+        const timer = setTimeout(() => setTracksViewChanges(false), 500);
+        return () => clearTimeout(timer);
+    }, []);
+
+    return (
+        <Marker.Animated
+            coordinate={coordinate}
+            anchor={{ x: 0.5, y: 0.5 }}
+            tracksViewChanges={tracksViewChanges}
+        >
+            <View style={styles.sosMarkerContainer}>
+                {/* Blinking Red Ring Effect representing an active SOS user */}
+                <View style={styles.sosMarkerRing}>
+                    {/* The solid red inner dot with white border */}
+                    <View style={styles.sosMarkerDot} />
+                </View>
+                <View style={styles.sosMarkerLabel}>
+                    <Text style={styles.sosMarkerLabelText}>SOS</Text>
+                </View>
+            </View>
+        </Marker.Animated>
+    );
+}
+
 export default function SisterHoodMap() {
     const user = useAuthStore(state => state.user);
     const mapRef = useRef(null)
@@ -32,17 +142,44 @@ export default function SisterHoodMap() {
     const [trackingMode, setTrackingMode] = useState('STATIONARY')
     const [sosActive, setSosActive] = useState(false)
     const [isRecording, setIsRecording] = useState(false);
-    const [nearbyThreats, setNearbyThreats] = useState([]);
-    const [markerLoaded, setMarkerLoaded] = useState(false);
+    const [sosByArea, setSosByArea] = useState({}); // { geo5: { uid: active_sos entry } }
     const [currentGeo8, setCurrentGeo8] = useState(null);
+    const [currentGeo6, setCurrentGeo6] = useState(null);
+    const [isFollowing, setIsFollowing] = useState(true);
 
     // SOS Alert Banner state
-    const [focusedThreat, setFocusedThreat] = useState(null);
     const [showSOSBanner, setShowSOSBanner] = useState(false);
     const bannerSlideAnim = useRef(new Animated.Value(-120)).current; // starts off-screen above
 
-    // Safety Score logic
-    const { safetyScore, getScoreColor } = useSafetyScore(currentGeo8);
+    // Nearby SOS users, deduped across cells, with distance from our (filtered) position
+    const nearbyThreats = useMemo(() => {
+        if (!currentLocation) return [];
+        const byUser = {};
+        Object.values(sosByArea).forEach(entries => {
+            Object.entries(entries).forEach(([uid, data]) => {
+                if (!Number.isFinite(data?.lat) || !Number.isFinite(data?.lng)) return;
+                if (!byUser[uid] || (data.timestamp || 0) > (byUser[uid].timestamp || 0)) byUser[uid] = data;
+            });
+        });
+        return Object.entries(byUser)
+            .map(([uid, data]) => ({
+                id: uid,
+                lat: data.lat,
+                lng: data.lng,
+                picture: data.picture,
+                timestamp: data.timestamp,
+                distance: Math.round(calculateDistance(currentLocation.latitude, currentLocation.longitude, data.lat, data.lng)),
+            }))
+            .filter(t => t.distance <= NEARBY_SOS_RADIUS_M);
+    }, [sosByArea, currentLocation]);
+
+    const focusedThreat = useMemo(
+        () => nearbyThreats.length ? nearbyThreats.reduce((a, b) => a.distance < b.distance ? a : b) : null,
+        [nearbyThreats]
+    );
+    // Changes only when someone starts/stops an SOS, not when their position updates
+    const threatIdsKey = useMemo(() => nearbyThreats.map(t => t.id).sort().join(','), [nearbyThreats]);
+
 
     // Trust Score lifecycle
     const { handleSOSResolution, handleSafeWalkExit, flushTrustScoreToServer } = useTrustScore();
@@ -53,56 +190,61 @@ export default function SisterHoodMap() {
     // Session ref: did the user trigger SOS at any point this session?
     const sosWasTriggeredRef = useRef(false);
 
-    // React to nearby threats — show / hide the alert banner
+    // React to nearby threats — show the banner when someone new starts an SOS, hide when none are left
     useEffect(() => {
-        if (nearbyThreats.length > 0) {
-            const closest = nearbyThreats.reduce((a, b) => a.distance < b.distance ? a : b);
-            setFocusedThreat(closest);
-            // Only animate in if not already showing
-            if (!showSOSBanner) {
-                setShowSOSBanner(true);
-                Animated.spring(bannerSlideAnim, {
-                    toValue: 0,
-                    useNativeDriver: true,
-                    tension: 65,
-                    friction: 10,
-                }).start();
-            }
+        if (threatIdsKey) {
+            setShowSOSBanner(true);
+            Animated.spring(bannerSlideAnim, {
+                toValue: 0,
+                useNativeDriver: true,
+                tension: 65,
+                friction: 10,
+            }).start();
         } else {
             // Slide out and clear
             Animated.timing(bannerSlideAnim, {
                 toValue: -120,
                 duration: 300,
                 useNativeDriver: true,
-            }).start(() => {
-                setShowSOSBanner(false);
-                setFocusedThreat(null);
-            });
+            }).start(() => setShowSOSBanner(false));
         }
-    }, [nearbyThreats]);
-
-    // Hardware Accelerated Compass FOV indicator
-    const { headingAnim } = useCompass(100, 2);
-    const spin = headingAnim.interpolate({
-        inputRange: [-3600, 3600], // Extraneous range to prevent clamping wraparound
-        outputRange: ['-3600deg', '3600deg']
-    });
-
-    // Smooth Marker Animation State
-    const animatedLocRef = useRef(new AnimatedRegion({
-        latitude: 0,
-        longitude: 0,
-        latitudeDelta: 0,
-        longitudeDelta: 0,
-    }));
+    }, [threatIdsKey]);
 
     const modeRef = useRef('STATIONARY')
     const blocksRef = useRef([])
     const anchorRef = useRef(null)
-    const lastCoordRef = useRef(null)
     const bearingRef = useRef(0)
+    const bearingAnchorRef = useRef(null)
     const lastGeo8Ref = useRef(null);
     const lastGeo6Ref = useRef(null);
+
+    // Location signal: raw latest fix (for SOS), filtered fix (for everything else)
+    const filterRef = useRef(createLocationFilter());
+    const lastRawFixRef = useRef(null);
+    const currentLocationRef = useRef(null);
+    const shownLocationRef = useRef(null); // last fix pushed to state
+
+    // Camera follow + safety-cell hysteresis
+    const isFollowingRef = useRef(true);
+    const lastCameraAtRef = useRef(0);
+    const displayedGeo8Ref = useRef(null);
+    const geo8CandidateRef = useRef({ cell: null, count: 0 });
+    const initialRegionRef = useRef(null);
+
+    const userRef = useRef(user);
+    useEffect(() => {
+        userRef.current = user;
+    }, [user]);
+
+    // Forward cells for the "next 100 m" score while walking
+    const aheadCells = useMemo(() => {
+        if (!currentLocation || trackingMode !== 'MOVING') return [];
+        return getForwardBlocks(currentLocation.latitude, currentLocation.longitude, bearingRef.current, AHEAD_BLOCKS).slice(1);
+    }, [currentLocation, trackingMode]);
+
+    // Safety Score logic
+    const { safetyScore, bucket: safetyBucket, aheadScore, getScoreColor } = useSafetyScore(currentGeo8, aheadCells);
+    const showAheadScore = aheadScore !== null && (safetyScore === null || aheadScore < safetyScore - 0.5);
 
     const isMounted = useRef(true);
     const isProcessingRef = useRef(false);
@@ -128,7 +270,7 @@ export default function SisterHoodMap() {
                 await handleSafeWalkExit();
             } else {
                 // SOS was triggered — flush the final trust state to Firestore
-                await flushTrustScoreToServer();
+                await flushTrustScoreToServer(user?.id);
             }
         },
         onExit: async () => {
@@ -163,17 +305,27 @@ export default function SisterHoodMap() {
 
                 if (!isMounted.current) return; // Prevent state update if unmounted during await
 
-                const { latitude, longitude } = initialLoc.coords;
+                const initialRaw = { ...initialLoc.coords, timestamp: initialLoc.timestamp };
+                lastRawFixRef.current = initialRaw;
+                // Seed the filter even if this first fix is coarse; later fixes refine it
+                const initialFix = filterRef.current(initialRaw, { force: true });
+                const { latitude, longitude } = initialFix;
 
-                setCurrentLocation(initialLoc.coords);
+                initialRegionRef.current = {
+                    latitude,
+                    longitude,
+                    latitudeDelta: 0.005,
+                    longitudeDelta: 0.005,
+                };
+                currentLocationRef.current = initialFix;
+                shownLocationRef.current = initialFix;
+                setCurrentLocation(initialFix);
 
-                animatedLocRef.current.setValue({
-                    latitude: initialLoc.coords.latitude,
-                    longitude: initialLoc.coords.longitude,
-                });
-
-                lastCoordRef.current = initialLoc.coords;
-                anchorRef.current = initialLoc.coords;
+                anchorRef.current = initialFix;
+                bearingAnchorRef.current = initialFix;
+                const initialGeo6 = ngeohash.encode(latitude, longitude, 6);
+                lastGeo6Ref.current = initialGeo6;
+                setCurrentGeo6(initialGeo6);
 
                 const startingBlocks = getInitialStationaryBlocks(latitude, longitude, 50);
                 blocksRef.current = startingBlocks;
@@ -184,12 +336,19 @@ export default function SisterHoodMap() {
                 const sub = await Location.watchPositionAsync(
                     {
                         accuracy: Location.Accuracy.High,
-                        timeInterval: 2000,
-                        distanceInterval: 1,
+                        timeInterval: 3000,
+                        distanceInterval: 5,
                     },
                     (newLocation) => {
-                        if (isMounted.current && !isProcessingRef.current) {
-                            handleLocationWorker(newLocation.coords);
+                        if (!isMounted.current) return;
+                        // Single writer: once the app leaves the foreground, the background task owns location writes
+                        if (AppState.currentState !== 'active') return;
+
+                        const raw = { ...newLocation.coords, timestamp: newLocation.timestamp };
+                        lastRawFixRef.current = raw;
+                        const fix = filterRef.current(raw);
+                        if (fix && !isProcessingRef.current) {
+                            handleLocationWorker(fix);
                         }
                     }
                 );
@@ -211,6 +370,8 @@ export default function SisterHoodMap() {
                     lastGeo6: lastGeo6Ref.current,
                     lastGeo8: lastGeo8Ref.current,
                     blocks: blocksRef.current,
+                    lastLat: latitude,
+                    lastLng: longitude,
                 });
                 await startBackgroundService();
                 await showPersistentNotification(sosActiveRef.current);
@@ -247,12 +408,16 @@ export default function SisterHoodMap() {
                 if (user?.id) {
                     try {
                         await update(ref(db, `users/${user.id}`), { sos_triggered: true });
-                        if (lastGeo6Ref.current) {
-                            await set(ref(db, `active_sos/${lastGeo6Ref.current}/${user.id}`), {
-                                lat: lastCoordRef.current?.latitude || 0,
-                                lng: lastCoordRef.current?.longitude || 0,
+                        const raw = lastRawFixRef.current;
+                        if (lastGeo6Ref.current && raw) {
+                            await broadcastSosLocation({
+                                userId: user.id,
+                                geo6: ngeohash.encode(raw.latitude, raw.longitude, 6),
+                                latitude: raw.latitude,
+                                longitude: raw.longitude,
+                                accuracy: raw.accuracy,
                                 picture: user.picture || user.photoURL || 'https://i.pravatar.cc/100',
-                                timestamp: Date.now(),
+                                force: true,
                             });
                         }
                     } catch (e) {
@@ -319,62 +484,77 @@ export default function SisterHoodMap() {
         const subscription = AppState.addEventListener('change', handleAppStateChange);
         return () => subscription.remove();
     }, [user]); // Removed sosActive from dependencies to prevent listener re-registration
-    // 2. Main Logic Loop (Runs on every step)
-    const handleLocationWorker = async (newCoords) => {
+    // 2. Main Logic Loop (runs on every accepted, filtered fix)
+    // Reads SOS/user state through refs: this function is captured once by watchPositionAsync,
+    // so closed-over state would be stale forever.
+    const handleLocationWorker = async (fix) => {
         isProcessingRef.current = true;
         let currentGeohash6 = null;
         let currentGeohash8 = null;
+        const currentUser = userRef.current;
 
         try {
-            setCurrentLocation(newCoords);
-            if (Platform.OS === 'android') {
-                if (animatedLocRef.current) {
-                    animatedLocRef.current.timing({
-                        latitude: newCoords.latitude,
-                        longitude: newCoords.longitude,
-                        duration: 1500,
-                        useNativeDriver: false
-                    }).start();
-                }
+            const { latitude: lat, longitude: lng } = fix;
+            currentLocationRef.current = fix;
+
+            // Re-render only on real movement
+            const lastShown = shownLocationRef.current;
+            if (!lastShown || calculateDistance(lastShown.latitude, lastShown.longitude, lat, lng) > STATE_UPDATE_MIN_MOVE_M) {
+                shownLocationRef.current = fix;
+                setCurrentLocation(fix);
             }
 
-            if (mapRef.current) {
+            // Follow the user only while they haven't panned away, and never chain animations
+            const now = Date.now();
+            if (mapRef.current && isFollowingRef.current && now - lastCameraAtRef.current >= CAMERA_FOLLOW_INTERVAL_MS) {
+                lastCameraAtRef.current = now;
                 mapRef.current.animateCamera({
-                    center: {
-                        latitude: newCoords.latitude,
-                        longitude: newCoords.longitude,
-                    },
+                    center: { latitude: lat, longitude: lng },
                     zoom: 17,
                     pitch: 50, // Angled 3D downward view (Navigation layout)
-                }, { duration: 1500 });
+                }, { duration: CAMERA_ANIMATION_MS });
             }
-            const { latitude: lat, longitude: lng } = newCoords;
+
             currentGeohash6 = ngeohash.encode(lat, lng, 6);
             currentGeohash8 = ngeohash.encode(lat, lng, 8);
-            if (user?.id) {
-                update(ref(db, `users/${user.id}`), {
+            if (currentUser?.id) {
+                update(ref(db, `users/${currentUser.id}`), {
                     current_lat: lat,
                     current_lng: lng,
                     current_geohash_6: currentGeohash6,
                     current_geohash_8: currentGeohash8,
-                    sos_triggered: sosActive,
-                    safe_walk_streak: user.safe_walk_streak,
-                    false_sos_count: user.false_sos_count,
-                    trust_score: user.trust_score,
-                    is_verified: user.is_verified,
+                    sos_triggered: sosActiveRef.current,
+                    safe_walk_streak: currentUser.safe_walk_streak,
+                    false_sos_count: currentUser.false_sos_count,
+                    trust_score: currentUser.trust_score,
+                    is_verified: currentUser.is_verified,
                 }).catch(e => console.error("Error updating users geo footprint", e));
             }
 
-            // Update local state for safety score hook
-            if (currentGeohash8 && currentGeohash8 !== currentGeo8) {
-                setCurrentGeo8(currentGeohash8);
+            // Safety cell with hysteresis: switch only after the new cell is seen on consecutive fixes,
+            // so standing on a cell edge doesn't flip the score back and forth
+            if (currentGeohash8 === displayedGeo8Ref.current) {
+                geo8CandidateRef.current = { cell: null, count: 0 };
+            } else {
+                const candidate = geo8CandidateRef.current;
+                const count = candidate.cell === currentGeohash8 ? candidate.count + 1 : 1;
+                geo8CandidateRef.current = { cell: currentGeohash8, count };
+                if (count >= GEO8_SWITCH_CONFIRMATIONS || !displayedGeo8Ref.current) {
+                    displayedGeo8Ref.current = currentGeohash8;
+                    geo8CandidateRef.current = { cell: null, count: 0 };
+                    setCurrentGeo8(currentGeohash8);
+                }
+            }
+
+            if (currentGeohash6 !== lastGeo6Ref.current) {
+                setCurrentGeo6(currentGeohash6);
             }
 
             // B. STATIONARY TO MOVING HANDOFF
             if (modeRef.current === 'STATIONARY') {
                 // Safety: ensure anchor is set
                 if (!anchorRef.current) {
-                    anchorRef.current = newCoords;
+                    anchorRef.current = fix;
                 }
                 const distanceWalked = calculateDistance(
                     anchorRef.current.latitude, anchorRef.current.longitude,
@@ -388,6 +568,7 @@ export default function SisterHoodMap() {
                         lat, lng
                     );
                     bearingRef.current = startBearing;
+                    bearingAnchorRef.current = fix;
 
                     // Fetch the forward path 
                     const newPath = getForwardBlocks(lat, lng, startBearing, 5);
@@ -395,8 +576,8 @@ export default function SisterHoodMap() {
                     console.log(`Switching to MOVING. Dropping 50m radius, tracking forward.`, newPath);
 
                     // Unload the old massive grid, load the 5 specific path blocks
-                    removeFromRTDB(blocksRef.current, user.id);
-                    addToRTDB(newPath, user.id);
+                    removeFromRTDB(blocksRef.current, currentUser.id);
+                    addToRTDB(newPath, currentUser.id);
 
                     blocksRef.current = newPath;
                     setTrackingMode('MOVING');
@@ -405,22 +586,27 @@ export default function SisterHoodMap() {
             }
             // C. MOVING SLIDING WINDOW
             else if (modeRef.current === 'MOVING') {
-                // Safety: ensure lastCoord is set
-                if (!lastCoordRef.current) {
-                    lastCoordRef.current = newCoords;
+                // Bearing: GPS course when actually moving, otherwise only from a displacement
+                // clearly larger than GPS noise
+                if (!bearingAnchorRef.current) {
+                    bearingAnchorRef.current = fix;
                 }
-                const stepDistance = calculateDistance(
-                    lastCoordRef.current.latitude, lastCoordRef.current.longitude,
+                const displacement = calculateDistance(
+                    bearingAnchorRef.current.latitude, bearingAnchorRef.current.longitude,
                     lat, lng
                 );
-
-                // Only update our bearing heavily if we've taken a distinct step to prevent jitter
-                if (stepDistance > 2) {
+                if (fix.speed > HEADING_MIN_SPEED_MPS && fix.heading >= 0) {
+                    bearingRef.current = fix.heading;
+                } else if (displacement > BEARING_MIN_DISPLACEMENT_M) {
                     bearingRef.current = calculateBearing(
-                        lastCoordRef.current.latitude, lastCoordRef.current.longitude,
+                        bearingAnchorRef.current.latitude, bearingAnchorRef.current.longitude,
                         lat, lng
                     );
                 }
+                if (displacement > BEARING_MIN_DISPLACEMENT_M) {
+                    bearingAnchorRef.current = fix;
+                }
+
                 const evalResult = evaluateSlidingWindow(
                     currentGeohash8,
                     blocksRef.current,
@@ -432,10 +618,10 @@ export default function SisterHoodMap() {
                 if (evalResult.status !== 'ON_TRACK') {
                     console.log(`Window Action Triggered: ${evalResult.status}`);
                     if (evalResult.toRemove.length > 0) {
-                        removeFromRTDB(evalResult.toRemove, user.id);
+                        removeFromRTDB(evalResult.toRemove, currentUser.id);
                     }
                     if (evalResult.toAdd.length > 0) {
-                        addToRTDB(evalResult.toAdd, user.id);
+                        addToRTDB(evalResult.toAdd, currentUser.id);
                     }
 
                     // Sync local state
@@ -443,49 +629,18 @@ export default function SisterHoodMap() {
                 }
             }
 
-            // D. SOS STATE TRACKING EDGE CASES
-            if (sosActive) {
-                // Case 1 & 2: User stepped into a NEW geo8 block while SOS is active
-                // Apply Reverse Gaussian impact to the new block using trust score
-                if (currentGeohash8 !== lastGeo8Ref.current) {
-                    const userTrustScore = user.trust_score ?? 5.0;
-                    const blockRef = ref(db, `blocks/${currentGeohash8}`);
-                    runTransaction(blockRef, (currentBlock) => {
-                        if (currentBlock && currentBlock.block_state) {
-                            const metrics = currentBlock.block_state.safety_metrics || {};
-                            const { newWeightedImpact, newCurrentScore } = computeBlockSafetyImpact(
-                                metrics.weighted_sos_impact || 0,
-                                userTrustScore,
-                                metrics.last_updated || null
-                            );
-                            currentBlock.block_state.sos_count = (currentBlock.block_state.sos_count || 0) + 1;
-                            currentBlock.block_state.safety_metrics = {
-                                ...metrics,
-                                weighted_sos_impact: newWeightedImpact,
-                                current_score: newCurrentScore,
-                                last_updated: Date.now(),
-                            };
-                        }
-                        return currentBlock;
-                    }).catch(e => console.error("Failed to apply block safety impact on move", e));
-                }
-
-                // Case 3: Geo6 Broadcasting Updates (Update active_sos)
-                if (currentGeohash6 !== lastGeo6Ref.current) {
-                    if (lastGeo6Ref.current) {
-                        // Remove from old geo6
-                        remove(ref(db, `active_sos/${lastGeo6Ref.current}/${user.id}`))
-                            .catch(e => console.error("Failed to remove old SOS broadast", e));
-                    }
-
-                    // Add to new geo6
-                    set(ref(db, `active_sos/${currentGeohash6}/${user.id}`), {
-                        lat: lat,
-                        lng: lng,
-                        picture: user.picture || user.photoURL || 'https://i.pravatar.cc/100',
-                        timestamp: Date.now()
-                    }).catch(e => console.error("Failed to add new SOS broadcast", e));
-                }
+            // D. SOS: keep the broadcast fresh (every 5 s / 10 m). Block scores are computed
+            // offline on the server from sos_events, so nothing is written per cell here.
+            if (sosActiveRef.current && currentUser?.id) {
+                broadcastSosLocation({
+                    userId: currentUser.id,
+                    geo6: currentGeohash6,
+                    latitude: lat,
+                    longitude: lng,
+                    accuracy: fix.accuracy,
+                    heading: fix.speed > HEADING_MIN_SPEED_MPS ? fix.heading : bearingRef.current,
+                    picture: currentUser.picture || currentUser.photoURL || 'https://i.pravatar.cc/100',
+                });
             }
 
         } catch (error) {
@@ -496,20 +651,21 @@ export default function SisterHoodMap() {
 
         if (currentGeohash8) lastGeo8Ref.current = currentGeohash8;
         if (currentGeohash6) lastGeo6Ref.current = currentGeohash6;
-        lastCoordRef.current = newCoords;
 
         // Sync with background task state
-        if (user?.id) {
+        if (currentUser?.id) {
             persistTrackingState({
-                userId: user.id,
+                userId: currentUser.id,
                 sosActive: sosActiveRef.current,
                 lastGeo6: lastGeo6Ref.current,
                 lastGeo8: lastGeo8Ref.current,
                 blocks: blocksRef.current,
+                lastLat: fix.latitude,
+                lastLng: fix.longitude,
             });
         }
     };
-    // 4. SOS STATE TRACKING EFFECT: Handle turn-on (boost block) and turn-off (show modal)
+    // 4. SOS STATE TRACKING EFFECT: Handle turn-on (log event + broadcast) and turn-off (show modal)
     useEffect(() => {
         if (!user || !lastGeo6Ref.current) return;
 
@@ -522,45 +678,27 @@ export default function SisterHoodMap() {
                 sos_triggered: true
             }).catch(e => console.error("Failed to set user sos true", e));
 
-            // 2. Apply Reverse Gaussian block safety impact using trust score
-            if (lastGeo8Ref.current) {
-                const userTrustScore = user.trust_score ?? 5.0;
-                const blockRef = ref(db, `blocks/${lastGeo8Ref.current}`);
-
-                runTransaction(blockRef, (currentBlock) => {
-                    if (currentBlock && currentBlock.block_state) {
-                        const metrics = currentBlock.block_state.safety_metrics || {};
-                        const { newWeightedImpact, newCurrentScore } = computeBlockSafetyImpact(
-                            metrics.weighted_sos_impact || 0,
-                            userTrustScore,
-                            metrics.last_updated || null
-                        );
-                        currentBlock.block_state.sos_count = (currentBlock.block_state.sos_count || 0) + 1;
-                        currentBlock.block_state.safety_metrics = {
-                            ...metrics,
-                            weighted_sos_impact: newWeightedImpact,
-                            current_score: newCurrentScore,
-                            last_updated: Date.now(),
-                        };
-                    }
-                    return currentBlock;
-                }).catch(e => console.error("Failed to apply block safety impact", e));
-            }
-
-            // 3. Immediately broadcast to nearby threats channel
-            if (currentLocation) {
-                set(ref(db, `active_sos/${lastGeo6Ref.current}/${user.id}`), {
-                    lat: currentLocation.latitude,
-                    lng: currentLocation.longitude,
+            // 2. Broadcast the latest raw fix immediately (filtering only applies to the continuous stream)
+            const raw = lastRawFixRef.current || currentLocationRef.current;
+            if (raw) {
+                broadcastSosLocation({
+                    userId: user.id,
+                    geo6: ngeohash.encode(raw.latitude, raw.longitude, 6),
+                    latitude: raw.latitude,
+                    longitude: raw.longitude,
+                    accuracy: raw.accuracy,
                     picture: user.picture || user.photoURL || 'https://i.pravatar.cc/100',
-                    timestamp: Date.now()
-                }).catch(e => console.error("Failed to start SOS broadcast", e));
+                    force: true,
+                });
+
+                // 3. Log one event for offline scoring (server dedupes repeats in the same session)
+                reportSosEvent(raw.latitude, raw.longitude);
             }
         } else {
             // ── SOS DEACTIVATED ──
-            // 1. Erase broadcast
-            remove(ref(db, `active_sos/${lastGeo6Ref.current}/${user.id}`))
-                .catch(e => console.error("Failed to clean up SOS broadcast", e));
+            // 1. Erase broadcast and close the event session
+            clearSosBroadcast(user.id, lastGeo6Ref.current);
+            endSosSession();
 
             // 2. Update user doc
             update(ref(db, `users/${user.id}`), {
@@ -580,53 +718,39 @@ export default function SisterHoodMap() {
             lastGeo6: lastGeo6Ref.current,
             lastGeo8: lastGeo8Ref.current,
             blocks: blocksRef.current,
+            lastLat: currentLocationRef.current?.latitude,
+            lastLng: currentLocationRef.current?.longitude,
         });
         showPersistentNotification(sosActive);
     }, [sosActive]);
 
     // 3. LISTEN FOR NEARBY THREATS / SOS GHOSTS
+    // Keyed on the geo5 area (~4.9 km), not on every GPS tick. active_sos is stored per geo6, so a
+    // key-prefix query per geo5 (own + 8 neighbours) covers the full 2.5 km radius with no border
+    // blind spots; the distance filter happens in memory (nearbyThreats).
+    const currentGeo5 = currentGeo6 ? currentGeo6.slice(0, 5) : null;
     useEffect(() => {
-        if (!currentLocation || !user) return;
-        const currentGeo6 = ngeohash.encode(currentLocation.latitude, currentLocation.longitude, 6);
+        if (!currentGeo5 || !user?.id) return;
+        const areas = [currentGeo5, ...ngeohash.neighbors(currentGeo5)];
 
-        // Listen to active_sos inside the current geo6 region
-        const nearbySosRef = ref(db, `active_sos/${currentGeo6}`);
-
-        const listener = onValue(nearbySosRef, (snapshot) => {
-            if (!snapshot.exists()) {
-                setNearbyThreats([]);
-                return;
-            }
-
-            const threats = [];
-            snapshot.forEach((child) => {
-                const threatData = child.val();
-                const threatUserId = child.key;
-
-                // Don't show ourselves as a threat
-                if (threatUserId === user.id) return;
-
-                const dist = calculateDistance(
-                    currentLocation.latitude, currentLocation.longitude,
-                    threatData.lat, threatData.lng
-                );
-
-                // Show women triggering SOS within a 2.5km vicinity locally
-                if (dist <= 2500) {
-                    threats.push({
-                        id: threatUserId,
-                        lat: threatData.lat,
-                        lng: threatData.lng,
-                        picture: threatData.picture,
-                        distance: Math.round(dist)
+        const unsubscribers = areas.map((geo5) => {
+            const areaQuery = query(ref(db, 'active_sos'), orderByKey(), startAt(geo5), endAt(`${geo5}\uf8ff`));
+            return onValue(areaQuery, (snapshot) => {
+                const entries = {};
+                snapshot.forEach((cell) => {
+                    cell.forEach((child) => {
+                        // Don't show ourselves as a threat
+                        if (child.key !== user.id) entries[child.key] = child.val();
                     });
-                }
+                });
+                setSosByArea(prev => ({ ...prev, [geo5]: entries }));
             });
-            setNearbyThreats(threats);
         });
 
-        return () => off(nearbySosRef, 'value', listener);
-    }, [currentLocation, user]);
+        // Drop areas we no longer listen to
+        setSosByArea(prev => Object.fromEntries(Object.entries(prev).filter(([k]) => areas.includes(k))));
+        return () => unsubscribers.forEach(unsubscribe => unsubscribe());
+    }, [currentGeo5, user?.id]);
 
     // RENDER STATES
     if (!currentLocation) {
@@ -648,84 +772,21 @@ export default function SisterHoodMap() {
                 showsMyLocationButton={false}
                 showsCompass={false}
                 showsUserHeadingIndicator={true}
-                initialRegion={{
-                    latitude: currentLocation.latitude,
-                    longitude: currentLocation.longitude,
-                    latitudeDelta: 0.005,
-                    longitudeDelta: 0.005,
+                initialRegion={initialRegionRef.current}
+                customMapStyle={MAP_STYLE}
+                onPanDrag={() => {
+                    // User took over the camera: stop auto-follow until they tap recenter
+                    if (isFollowingRef.current) {
+                        isFollowingRef.current = false;
+                        setIsFollowing(false);
+                    }
                 }}
-                customMapStyle={[
-                    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-                    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-                    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-                    {
-                        featureType: "administrative.locality",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#d59563" }],
-                    },
-                    {
-                        featureType: "poi",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#d59563" }],
-                    },
-                    {
-                        featureType: "road",
-                        elementType: "geometry",
-                        stylers: [{ color: "#38414e" }],
-                    },
-                    {
-                        featureType: "road",
-                        elementType: "geometry.stroke",
-                        stylers: [{ color: "#212a37" }],
-                    },
-                    {
-                        featureType: "road.highway",
-                        elementType: "geometry",
-                        stylers: [{ color: "#746855" }],
-                    },
-                    {
-                        featureType: "road.highway",
-                        elementType: "geometry.stroke",
-                        stylers: [{ color: "#1f2835" }],
-                    },
-                    {
-                        featureType: "water",
-                        elementType: "geometry",
-                        stylers: [{ color: "#17263c" }],
-                    },
-                    {
-                        featureType: "water",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#515c6d" }],
-                    },
-                    {
-                        featureType: "water",
-                        elementType: "labels.text.stroke",
-                        stylers: [{ color: "#17263c" }],
-                    },
-                ]}
             >
                 {/* 1. CURRENT USER MARKER - Handled natively by Google Maps via showsUserLocation={true} on MapView */}
 
                 {/* 2. SOS GHOST NEARBY MARKERS (Styled as solid red alerting dots) */}
                 {nearbyThreats.map((threat) => (
-                    <Marker
-                        key={threat.id}
-                        coordinate={{ latitude: threat.lat, longitude: threat.lng }}
-                        anchor={{ x: 0.5, y: 0.5 }}
-                        tracksViewChanges={true}
-                    >
-                        <View style={styles.sosMarkerContainer}>
-                            {/* Blinking Red Ring Effect representing an active SOS user */}
-                            <View style={styles.sosMarkerRing}>
-                                {/* The solid red inner dot with white border */}
-                                <View style={styles.sosMarkerDot} />
-                            </View>
-                            <View style={styles.sosMarkerLabel}>
-                                <Text style={styles.sosMarkerLabelText}>SOS</Text>
-                            </View>
-                        </View>
-                    </Marker>
+                    <SOSMarker key={threat.id} threat={threat} />
                 ))}
 
             </MapView>
@@ -748,6 +809,9 @@ export default function SisterHoodMap() {
                         activeOpacity={0.85}
                         onPress={() => {
                             if (mapRef.current && focusedThreat) {
+                                // Stop auto-follow, otherwise the camera snaps back to us within 3 s
+                                isFollowingRef.current = false;
+                                setIsFollowing(false);
                                 mapRef.current.animateCamera({
                                     center: { latitude: focusedThreat.lat, longitude: focusedThreat.lng },
                                     zoom: 18,
@@ -850,10 +914,20 @@ export default function SisterHoodMap() {
                         style={[styles.safetyDot, { backgroundColor: getScoreColor(safetyScore) }]}
                     />
                     <View>
-                        <Text style={styles.safetyLabel}>Safety</Text>
+                        <Text style={styles.safetyLabel}>{safetyScore === null ? 'No data' : 'Safety'}</Text>
                         <Text style={[styles.safetyValue, { color: getScoreColor(safetyScore) }]}>
-                            {safetyScore.toFixed(1)}
+                            {safetyScore === null ? '—' : safetyScore.toFixed(1)}
                         </Text>
+                        {safetyBucket && (
+                            <Text style={[styles.safetySubText, { color: getScoreColor(safetyBucket.score) }]}>
+                                {safetyBucket.name} {safetyBucket.score.toFixed(1)}
+                            </Text>
+                        )}
+                        {showAheadScore && (
+                            <Text style={[styles.safetySubText, { color: getScoreColor(aheadScore) }]}>
+                                ahead {aheadScore.toFixed(1)}
+                            </Text>
+                        )}
                     </View>
                 </View>
 
@@ -872,18 +946,22 @@ export default function SisterHoodMap() {
             <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => {
-                    if (mapRef.current && currentLocation) {
+                    const loc = currentLocationRef.current;
+                    isFollowingRef.current = true;
+                    setIsFollowing(true);
+                    if (mapRef.current && loc) {
+                        lastCameraAtRef.current = Date.now();
                         mapRef.current.animateCamera({
-                            center: { latitude: currentLocation.latitude, longitude: currentLocation.longitude },
+                            center: { latitude: loc.latitude, longitude: loc.longitude },
                             zoom: 17,
                             pitch: 50,
                             heading: 0
-                        }, { duration: 1000 });
+                        }, { duration: CAMERA_ANIMATION_MS });
                     }
                 }}
                 style={styles.compassButton}
             >
-                <Compass size={24} color="#3b82f6" />
+                <Compass size={24} color={isFollowing ? '#3b82f6' : '#a1a1aa'} />
             </TouchableOpacity>
 
             {/* ACTION BOTTOM BAR */}
@@ -901,7 +979,8 @@ export default function SisterHoodMap() {
                 onOutcome={async (outcome) => {
                     setShowResolutionModal(false);
                     await handleSOSResolution(outcome);
-                    await flushTrustScoreToServer();
+                    await resolveSosEvent(outcome);
+                    await flushTrustScoreToServer(user?.id);
                 }}
             />
         </View>
@@ -1006,6 +1085,12 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '900',
         letterSpacing: -0.5,
+    },
+    safetySubText: {
+        fontSize: 9,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     threatBadge: {
         backgroundColor: 'rgba(69, 10, 10, 0.9)',

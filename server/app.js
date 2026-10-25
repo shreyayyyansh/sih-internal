@@ -25,6 +25,7 @@ import reportRoutes from "./src/routes/report.routes.js"
 import userRoutes from "./src/routes/user.routes.js"
 import mapReports from "./src/routes/mapReports.js";
 import blocksRoutes from "./src/routes/blocks.route.js";
+import womenRoutes from "./src/routes/women.routes.js";
 import kindshareRoutes from "./src/routes/kindshare/index.js";
 
 
@@ -122,6 +123,7 @@ app.use("/api/user",userRoutes)
 app.use("/api/reports",reportRoutes)
 app.use("/map-reports", mapReports);
 app.use("/api/blocks", blocksRoutes);
+app.use("/api/women", womenRoutes);
 
 import urbanconnectRoutes from "./src/routes/urbanconnect.route.js";
 app.use("/api/urbanconnect", urbanconnectRoutes);

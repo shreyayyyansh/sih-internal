@@ -57,13 +57,21 @@ export default function useCompass(throttleMs = 200, degreeThreshold = 2) {
         };
     }, []);
 
-    // Also return the raw degrees for calculations like reset buttons
+    // Also return the raw degrees for calculations like reset buttons.
+    // Only re-render on a real turn (> 5°), not on every animation frame.
     const [rawHeading, setRawHeading] = useState(0);
+    const lastRawRef = useRef(0);
     useEffect(() => {
-        headingAnim.addListener(({ value }) => {
-            setRawHeading(value % 360);
+        const id = headingAnim.addListener(({ value }) => {
+            const heading = ((value % 360) + 360) % 360;
+            let delta = Math.abs(heading - lastRawRef.current);
+            if (delta > 180) delta = 360 - delta;
+            if (delta > 5) {
+                lastRawRef.current = heading;
+                setRawHeading(heading);
+            }
         });
-        return () => headingAnim.removeAllListeners();
+        return () => headingAnim.removeListener(id);
     }, []);
 
     return { headingAnim, rawHeading };

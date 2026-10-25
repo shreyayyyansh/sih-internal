@@ -1,9 +1,12 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import ngeohash from 'ngeohash';
-import { ref, update, runTransaction, set, remove } from 'firebase/database';
+import { ref, update } from 'firebase/database';
+import { AppState } from 'react-native';
 import { db } from '../../../../../lib/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createLocationFilter } from './locationFilter';
+import { broadcastSosLocation } from './sosBroadcast';
 
 export const BACKGROUND_LOCATION_TASK = 'SISTERHOOD_BACKGROUND_LOCATION';
 
@@ -15,22 +18,32 @@ const STORAGE_KEYS = {
     LAST_GEO8: 'bg_lastGeo8',
     BLOCKS: 'bg_blocks',
     IS_RECORDING: 'bg_isRecording',
+    LAST_LAT: 'bg_lastLat',
+    LAST_LNG: 'bg_lastLng',
+    SOS_EVENT_ID: 'bg_sosEventId',
+    SOS_STARTED_AT: 'bg_sosStartedAt', // session id for event logging; cleared when SOS ends
+    PENDING_SOS_EVENTS: 'bg_pendingSosEvents',
 };
 
 /**
  * Persist current tracking state so the background task can read it.
  * Called from SisterHoodMap before transitioning to background.
  */
-export const persistTrackingState = async ({ userId, sosActive, lastGeo6, lastGeo8, blocks }) => {
+export const persistTrackingState = async ({ userId, sosActive, lastGeo6, lastGeo8, blocks, lastLat, lastLng }) => {
     try {
-        await AsyncStorage.multiSet([
+        const entries = [
             [STORAGE_KEYS.USER_ID, userId || ''],
             [STORAGE_KEYS.SOS_ACTIVE, JSON.stringify(sosActive)],
             [STORAGE_KEYS.LAST_GEO6, lastGeo6 || ''],
             [STORAGE_KEYS.LAST_GEO8, lastGeo8 || ''],
             [STORAGE_KEYS.BLOCKS, JSON.stringify(blocks || [])],
             [STORAGE_KEYS.IS_RECORDING, JSON.stringify(false)], // Reset on manual persist (start)
-        ]);
+        ];
+        // Last known position, so a notification-triggered SOS can broadcast real coordinates
+        if (Number.isFinite(lastLat) && Number.isFinite(lastLng)) {
+            entries.push([STORAGE_KEYS.LAST_LAT, String(lastLat)], [STORAGE_KEYS.LAST_LNG, String(lastLng)]);
+        }
+        await AsyncStorage.multiSet(entries);
     } catch (e) {
         console.error('Failed to persist tracking state:', e);
     }
@@ -51,10 +64,15 @@ export const getPersistedState = async () => {
             lastGeo8: map[STORAGE_KEYS.LAST_GEO8] || null,
             blocks: JSON.parse(map[STORAGE_KEYS.BLOCKS] || '[]'),
             isRecording: JSON.parse(map[STORAGE_KEYS.IS_RECORDING] || 'false'),
+            lastLat: map[STORAGE_KEYS.LAST_LAT] ? parseFloat(map[STORAGE_KEYS.LAST_LAT]) : null,
+            lastLng: map[STORAGE_KEYS.LAST_LNG] ? parseFloat(map[STORAGE_KEYS.LAST_LNG]) : null,
+            sosEventId: map[STORAGE_KEYS.SOS_EVENT_ID] || null,
+            sosStartedAt: map[STORAGE_KEYS.SOS_STARTED_AT] ? parseInt(map[STORAGE_KEYS.SOS_STARTED_AT], 10) : null,
+            pendingSosEvents: JSON.parse(map[STORAGE_KEYS.PENDING_SOS_EVENTS] || '[]'),
         };
     } catch (e) {
         console.error('Failed to read persisted state:', e);
-        return { userId: null, sosActive: false, lastGeo6: null, lastGeo8: null, blocks: [] };
+        return { userId: null, sosActive: false, lastGeo6: null, lastGeo8: null, blocks: [], lastLat: null, lastLng: null, sosEventId: null, sosStartedAt: null, pendingSosEvents: [] };
     }
 };
 
@@ -72,6 +90,9 @@ export const updatePersistedKey = async (key, value) => {
     }
 };
 
+// Separate from the foreground filter: the two never run at the same time (see the AppState check below)
+const backgroundFilter = createLocationFilter();
+
 /**
  * Define the background location task at module scope (required by expo-task-manager).
  */
@@ -81,12 +102,18 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
         return;
     }
 
+    // Single writer: while the app is open, SisterHoodMap's foreground watcher owns users/{uid} and active_sos
+    if (AppState.currentState === 'active') return;
+
     if (data) {
         const { locations } = data;
         const location = locations[0];
         if (!location) return;
 
-        const { latitude, longitude } = location.coords;
+        const fix = backgroundFilter({ ...location.coords, timestamp: location.timestamp });
+        if (!fix) return;
+
+        const { latitude, longitude } = fix;
         const state = await getPersistedState();
         if (!state.userId) return;
 
@@ -106,39 +133,26 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
             console.error('Background RTDB user update failed:', e);
         }
 
-        // Handle SOS geo6 broadcast updates in background
+        // Keep the SOS position fresh for people nearby (every 5 s / 10 m).
+        // Block scores are no longer written here; the server computes them from sos_events.
         if (state.sosActive) {
-            // Geo8 block change → increment sos_count
-            if (currentGeo8 !== state.lastGeo8) {
-                try {
-                    const blockRef = ref(db, `blocks/${currentGeo8}`);
-                    await runTransaction(blockRef, (currentBlock) => {
-                        if (currentBlock && currentBlock.block_state) {
-                            currentBlock.block_state.sos_count = (currentBlock.block_state.sos_count || 0) + 1;
-                        }
-                        return currentBlock;
-                    });
-                } catch (e) {
-                    console.error('Background SOS block increment failed:', e);
-                }
-            }
-
-            // Geo6 change → update active_sos broadcast
-            if (currentGeo6 !== state.lastGeo6) {
-                if (state.lastGeo6) {
-                    remove(ref(db, `active_sos/${state.lastGeo6}/${state.userId}`)).catch(() => { });
-                }
-                set(ref(db, `active_sos/${currentGeo6}/${state.userId}`), {
-                    lat: latitude,
-                    lng: longitude,
-                    timestamp: Date.now(),
-                }).catch(() => { });
-            }
+            await broadcastSosLocation({
+                userId: state.userId,
+                geo6: currentGeo6,
+                latitude,
+                longitude,
+                accuracy: fix.accuracy,
+                heading: fix.speed > 0.8 ? fix.heading : null,
+            });
         }
 
         // Persist updated geo references
-        await updatePersistedKey('LAST_GEO6', currentGeo6);
-        await updatePersistedKey('LAST_GEO8', currentGeo8);
+        await AsyncStorage.multiSet([
+            [STORAGE_KEYS.LAST_GEO6, currentGeo6],
+            [STORAGE_KEYS.LAST_GEO8, currentGeo8],
+            [STORAGE_KEYS.LAST_LAT, String(latitude)],
+            [STORAGE_KEYS.LAST_LNG, String(longitude)],
+        ]);
     }
 });
 
@@ -155,7 +169,7 @@ export const startBackgroundService = async () => {
     await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
         accuracy: Location.Accuracy.High,
         timeInterval: 3000,
-        distanceInterval: 1,
+        distanceInterval: 5,
         deferredUpdatesInterval: 3000,
         showsBackgroundLocationIndicator: true,
         foregroundService: {

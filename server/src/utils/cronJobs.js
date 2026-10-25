@@ -7,10 +7,15 @@ import { updateSurfaceHeatReports } from "../controllers/gee/surfaceheatReportUp
 import { updateAirQualityReports } from "../controllers/gee/pollutantReportUpdater.js";
 import { fetchAndAnalyzeCityPulse } from "../controllers/urbanconnect/cityPulse.controller.js";
 import { initAutoDispatchCron } from "../cron/autoDispatchCron.js";
+import { runSafetyScoreJob } from "../jobs/safetyScoreJob.js";
 
 const startCronJobs = async () => {
   console.log("🚀 Initializing Cron Jobs..."); 
   initAutoDispatchCron(); 
+
+  // SisterHood safety scores: decay + spatial smoothing + normalization over the SOS event log
+  runSafetyScoreJob();
+  cron.schedule("*/15 * * * *", runSafetyScoreJob);
   cron.schedule("0 0 * * *", async () => {
     console.log("⏰ Cron Job Triggered: Updating GEE Reports...");
     await updateDeforestationReports(null, null); 

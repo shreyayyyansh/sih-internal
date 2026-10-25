@@ -1,10 +1,12 @@
 import * as Notifications from 'expo-notifications';
 import { Linking, Platform, DeviceEventEmitter } from 'react-native';
-import { ref, update, set, remove } from 'firebase/database';
+import { ref, update } from 'firebase/database';
 import { db } from '../../../../../lib/firebase';
 import { performExitCleanup } from './useGracefulExit';
 import { Audio } from 'expo-av';
 import { stopBackgroundService, getPersistedState, updatePersistedKey } from './backgroundService';
+import { broadcastSosLocation, clearSosBroadcast } from './sosBroadcast';
+import { endSosSession, reportSosEvent } from './sosEvents';
 
 let backgroundRecording = null;
 
@@ -144,15 +146,21 @@ export const handleNotificationAction = async (response) => {
         // Update RTDB immediately
         await update(ref(db, `users/${state.userId}`), { sos_triggered: newSosState });
 
-        if (newSosState && state.lastGeo6) {
-            // Activate: broadcast SOS
-            await set(ref(db, `active_sos/${state.lastGeo6}/${state.userId}`), {
-                lat: 0, lng: 0, // Will be updated on next background location tick
-                timestamp: Date.now(),
+        const hasPosition = Number.isFinite(state.lastLat) && Number.isFinite(state.lastLng);
+        if (newSosState && state.lastGeo6 && hasPosition) {
+            // Activate: broadcast the last persisted position right away (not 0,0)
+            await broadcastSosLocation({
+                userId: state.userId,
+                geo6: state.lastGeo6,
+                latitude: state.lastLat,
+                longitude: state.lastLng,
+                force: true,
             });
-        } else if (!newSosState && state.lastGeo6) {
+            reportSosEvent(state.lastLat, state.lastLng);
+        } else if (!newSosState) {
             // Deactivate: remove SOS broadcast
-            await remove(ref(db, `active_sos/${state.lastGeo6}/${state.userId}`));
+            await clearSosBroadcast(state.userId, state.lastGeo6);
+            await endSosSession();
         }
 
         // Update notification body to reflect new state
